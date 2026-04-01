@@ -45,7 +45,7 @@
               <th style="text-align:center;width:80px;">SL Thực</th>
               <th style="width:110px;">Hết hạn</th>
               <th style="width:120px;text-align:center;">Trạng thái</th>
-              <th style="width:100px; text-align:right; position:sticky; right:0; background:var(--color-bg-alt); z-index:2; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
+              <th style="width:100px; text-align:right; position:sticky; right:0; background:var(--color-bg-alt); z-index:10; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
                 Thao tác
               </th>
             </tr>
@@ -71,7 +71,7 @@
               <td style="text-align:center;">
                 <span class="chip" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
               </td>
-              <td style="text-align:right; position:sticky; right:0; background:white; z-index:2; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
+              <td style="text-align:right; position:sticky; right:0; background:#ffffff; z-index:9; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
                  <div style="display:flex;gap:8px;justify-content:flex-end;">
                   <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
                   <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
