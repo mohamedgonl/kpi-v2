@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api', // will be proxied by Vercel
+  apiUrl: 'https://kpi-backend-seven.vercel.app/api',
 };
