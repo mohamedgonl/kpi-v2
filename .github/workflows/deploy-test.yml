@@ -31,7 +31,6 @@ jobs:
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
 
 
-
   deploy-frontend:
     name: Frontend → Vercel (Test)
     runs-on: ubuntu-latest
