@@ -74,8 +74,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (Development)
-        run: npm run build -- --configuration development
+      - name: Build (Test)
+        run: npm run build -- --configuration test
         env:
           BACKEND_API_URL: ${{ secrets.TEST_BACKEND_API_URL }}
 

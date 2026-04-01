@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { APP_CONSTANTS } from '../../common/constants/constants';
 
 @Module({
   imports: [
@@ -13,8 +14,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'kpi-v2-production-fallback-secret-2026!',
-        signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '7d') as any },
+        secret: configService.get<string>('JWT_SECRET')!,
+        signOptions: { 
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || APP_CONSTANTS.AUTH.JWT_EXPIRES_IN_DEFAULT) as any 
+        },
       }),
     }),
   ],
