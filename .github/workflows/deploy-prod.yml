@@ -24,20 +24,13 @@ jobs:
           cache-dependency-path: kpi-backend/package-lock.json
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
-          vercel-args: '--prod'
-          working-directory: kpi-backend
+        working-directory: ./
+        run: |
+          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --name kpi-backend-prod --prod --yes
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-          NODE_ENV: 'production'
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
+
 
   deploy-frontend:
 
@@ -73,5 +66,5 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
           vercel-args: '--prod'
-          working-directory: kpi-frontend
+          working-directory: ./
 
