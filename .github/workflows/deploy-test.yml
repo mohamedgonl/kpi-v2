@@ -23,7 +23,6 @@ jobs:
           cache-dependency-path: kpi-backend/package-lock.json
 
       - name: Deploy to Vercel
-        working-directory: kpi-backend
         run: |
           npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
         env:
