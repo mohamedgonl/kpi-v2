@@ -41,21 +41,17 @@ export class ReportsComponent implements OnInit {
     this.chartOptions = {
       maintainAspectRatio: false,
       aspectRatio: 0.6,
-      layout: {
-        padding: {
-          bottom: 40 // Thêm đệm cho chart
-        }
-      },
       plugins: {
         legend: { display: false }
       },
+      layout: {
+        padding: {
+          bottom: 30 // Khoảng trống cho nhãn xoay nghiêng
+        }
+      },
       scales: {
         x: {
-          ticks: { 
-            color: '#64748b', 
-            font: { size: 12 },
-            autoSkip: false // Không tự ẩn nhãn
-          },
+          ticks: { color: '#64748b', font: { size: 11 } },
           grid: { display: false }
         },
         y: {
