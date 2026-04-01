@@ -1,10 +1,49 @@
 # h:\Company\kpi\.github\workflows\deploy-prod.yml
 name: Deploy PROD (Prod Branch)
+
 on:
   push:
     branches: [prod]
 
 jobs:
+  deploy-backend:
+    name: Backend → Vercel (Production)
+    runs-on: ubuntu-latest
+    environment: kpi-v2-prod
+    defaults:
+      run:
+        working-directory: kpi-backend
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: kpi-backend/package-lock.json
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
+          vercel-args: '--prod'
+          working-directory: kpi-backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          NODE_ENV: 'production'
+
   deploy-frontend:
     name: Frontend → Vercel (Production)
     runs-on: ubuntu-latest
@@ -13,10 +52,9 @@ jobs:
     defaults:
       run:
         working-directory: kpi-frontend
+
     steps:
       - uses: actions/checkout@v4
-      
-      # Thêm lại bước này để đảm bảo build Angular chuẩn
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -40,3 +78,4 @@ jobs:
           vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
           vercel-args: '--prod'
           working-directory: kpi-frontend
+
