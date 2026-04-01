@@ -144,22 +144,26 @@ export class ReportsComponent implements OnInit {
   }
 
   async exportImage() {
-    // Tìm phần tử nội dung chính của trang báo cáo
-    const element = document.querySelector('.page-content') as HTMLElement;
+    // Nhắm mục tiêu chính xác vào biểu đồ, lấy toàn bộ chiều rộng nội dung
+    const element = document.getElementById('report-chart-inner');
     if (!element) return;
 
     try {
       this.loading = true;
       const canvas = await html2canvas(element, {
-        scale: 2, // Tăng chất lượng ảnh
+        scale: 3, // Siêu sắc nét (High Quality)
         logging: false,
         useCORS: true,
-        backgroundColor: '#f1f5f9'
+        backgroundColor: '#ffffff', // Nền trắng sạch đẹp
+        width: element.scrollWidth, // Lấy toàn bộ chiều rộng dù có bị cuộn
+        height: element.scrollHeight,
+        windowWidth: element.scrollWidth
       });
       
       const link = document.createElement('a');
-      link.download = `Bao_cao_KPI_${new Date().getTime()}.png`;
-      link.href = canvas.toDataURL('image/png');
+      const time = new Date().getTime();
+      link.download = `Bieu_do_KPI_${time}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       this.loading = false;
     } catch (err) {

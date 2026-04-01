@@ -30,7 +30,7 @@
         <div class="card-title"><i class="pi pi-chart-bar" style="margin-right:8px;color:var(--color-accent)"></i>Biểu đồ KPI nhân sự</div>
       </div>
       <div id="report-chart-container" style="overflow-x: auto; padding-bottom: 10px;">
-        <div [style.minWidth.px]="Math.max(800, reportData.length * 50)">
+        <div id="report-chart-inner" [style.minWidth.px]="Math.max(800, reportData.length * 50)" style="padding: 20px; background: white;">
           <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="350px"></p-chart>
         </div>
       </div>
@@ -123,7 +123,6 @@
           </div>
         </div>
       </div>
-    </div>
     </div>
   </ng-container>
 </div>
