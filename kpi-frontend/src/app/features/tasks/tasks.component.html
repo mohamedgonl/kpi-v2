@@ -33,73 +33,75 @@
       Chưa có công việc nào được ghi nhận trong kỳ này.
     </div>
 
-    <div class="p-card-body" *ngIf="tasks.length > 0">
-      <p-table [value]="tasks" 
-               [paginator]="true" 
-               [rows]="10" 
-               [showCurrentPageReport]="true"
-               currentPageReportTemplate="Hiện {first} đến {last} của {totalRecords} công việc"
-               [rowsPerPageOptions]="[10,25,50]"
-               [scrollable]="true" 
-               scrollHeight="500px"
-               scrollDirection="horizontal"
-               styleClass="p-datatable-sm p-datatable-gridlines"
-               [globalFilterFields]="['task_name', 'work_type_name', 'work_group_name']">
-        
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="task_name" style="min-width: 300px;">
-              Tên công việc / Nội dung <p-sortIcon field="task_name"></p-sortIcon>
-              <p-columnFilter type="text" field="task_name" display="menu" class="ml-auto"></p-columnFilter>
-            </th>
-            <th style="min-width: 150px;">
-              Nhóm <p-columnFilter type="text" field="work_group_name" display="menu" class="ml-auto"></p-columnFilter>
-            </th>
-            <th style="min-width: 200px;">
-              Loại công việc <p-columnFilter type="text" field="work_type_name" display="menu" class="ml-auto"></p-columnFilter>
-            </th>
-            <th style="min-width: 100px; text-align: center;">SL Giao</th>
-            <th style="min-width: 100px; text-align: center;">SL Thực</th>
-            <th pSortableColumn="deadline" style="min-width: 120px;">
-              Hết hạn <p-sortIcon field="deadline"></p-sortIcon>
-            </th>
-            <th style="min-width: 150px; text-align: center;">Trạng thái</th>
-            <th alignFrozen="right" pFrozenColumn [frozen]="true" style="min-width: 100px; text-align: center; border-left: 1px solid #ddd;">
-              Thao tác
-            </th>
-          </tr>
-        </ng-template>
+    <div class="table-container" style="position:relative; margin-top:10px;">
+      <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
+        <table class="data-table" style="min-width: 1200px; border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr>
+              <th style="min-width:250px;">
+                Tên công việc / Nội dung
+                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Tìm nhanh..." [(ngModel)]="filters.task_name" (input)="onFilterChange()">
+              </th>
+              <th style="width:150px;">
+                Nhóm 
+                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Lọc nhóm..." [(ngModel)]="filters.work_group_name" (input)="onFilterChange()">
+              </th>
+              <th style="width:200px;">
+                Loại công việc
+                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Lọc loại..." [(ngModel)]="filters.work_type_name" (input)="onFilterChange()">
+              </th>
+              <th style="text-align:center;width:80px;">SL Giao</th>
+              <th style="text-align:center;width:80px;">SL Thực</th>
+              <th style="width:110px;">Hết hạn</th>
+              <th style="width:120px;text-align:center;">Trạng thái</th>
+              <th style="width:100px; text-align:right; position:sticky; right:0; background:var(--color-bg-alt); z-index:2; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of pagedTasks">
+              <td>
+                <div style="font-weight:700;">{{ t.task_name }}</div>
+                <div style="font-size:11px;color:var(--color-muted);" *ngIf="t.reference_code">MS: {{ t.reference_code }}</div>
+              </td>
+              <td>
+                <span style="font-size:12px; opacity:0.8;">{{ t.work_group_name }}</span>
+              </td>
+              <td>
+                 <div style="font-size:12px;">{{ t.work_type_name }}</div>
+                 <div style="font-size:10px;color:var(--color-muted);" *ngIf="t.coefficient">HS: {{ t.coefficient }}</div>
+              </td>
+              <td style="text-align:center;">{{ t.assigned_qty }}</td>
+              <td style="text-align:center;"><strong>{{ t.actual_qty }}</strong></td>
+              <td>
+                <div style="font-size:12px;">{{ t.deadline | date:'dd/MM/yyyy' }}</div>
+              </td>
+              <td style="text-align:center;">
+                <span class="chip" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+              </td>
+              <td style="text-align:right; position:sticky; right:0; background:white; z-index:2; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
+                 <div style="display:flex;gap:8px;justify-content:flex-end;">
+                  <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
+                  <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <ng-template pTemplate="body" let-t>
-          <tr>
-            <td>
-              <div style="font-weight:700;">{{ t.task_name }}</div>
-              <div style="font-size:11px;color:var(--color-muted);" *ngIf="t.reference_code">MS: {{ t.reference_code }}</div>
-            </td>
-            <td>
-              <div class="chip" style="background:#f1f5f9; color:#475569; font-size:11px; font-weight:600;">
-                {{ t.work_group_name }}
-              </div>
-            </td>
-            <td>
-               <div style="font-size:12px; line-height: 1.4;">{{ t.work_type_name }}</div>
-               <div style="font-size:10px; color:var(--color-muted);" *ngIf="t.coefficient">HS: {{ t.coefficient }}</div>
-            </td>
-            <td style="text-align:center;">{{ t.assigned_qty | number:'1.1-2' }}</td>
-            <td style="text-align:center;"><strong>{{ t.actual_qty | number:'1.1-2' }}</strong></td>
-            <td>{{ t.deadline | date:'dd/MM/yyyy' }}</td>
-            <td style="text-align:center;">
-              <span class="chip" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
-            </td>
-            <td alignFrozen="right" pFrozenColumn [frozen]="true" style="text-align:center; background: white; box-shadow: -2px 0 5px rgba(0,0,0,0.05);">
-               <div style="display:flex;gap:8px;justify-content:center;">
-                <button class="btn btn-sm btn-outline" style="padding:4px 8px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline" style="padding:4px 8px;color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+      <!-- Custom Pagination -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
+        <div style="font-size:13px; color:var(--color-muted);">
+          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, filteredTasks.length) }} trong tổng số {{ filteredTasks.length }} công việc
+        </div>
+        <div style="display:flex; gap:4px;">
+           <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+           <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
+           <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+        </div>
+      </div>
     </div>
   </div>
   </ng-container>

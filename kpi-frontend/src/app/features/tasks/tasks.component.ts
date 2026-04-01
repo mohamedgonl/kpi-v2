@@ -1,15 +1,10 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-tasks',
@@ -17,12 +12,8 @@ import { TooltipModule } from 'primeng/tooltip';
   imports: [
     CommonModule, 
     ReactiveFormsModule, 
-    DialogModule, 
-    TableModule, 
-    ButtonModule, 
-    InputTextModule, 
-    TagModule, 
-    TooltipModule
+    FormsModule,
+    DialogModule
   ],
   templateUrl: './tasks.component.html'
 })
@@ -40,6 +31,34 @@ export class TasksComponent implements OnInit {
   showForm = false;
   editingTask: any = null;
   loading = false;
+  Math = Math;
+
+  // Pagination & Filtering
+  filters = { task_name: '', work_group_name: '', work_type_name: '' };
+  currentPage = 1;
+  pageSize = 10;
+
+  get filteredTasks() {
+    return this.tasks.filter(t => {
+      return (!this.filters.task_name || t.task_name.toLowerCase().includes(this.filters.task_name.toLowerCase())) &&
+             (!this.filters.work_group_name || t.work_group_name?.toLowerCase().includes(this.filters.work_group_name.toLowerCase())) &&
+             (!this.filters.work_type_name || t.work_type_name?.toLowerCase().includes(this.filters.work_type_name.toLowerCase()));
+    });
+  }
+
+  get pagedTasks() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTasks.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.filteredTasks.length / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  onFilterChange() {
+    this.currentPage = 1;
+  }
 
   form = this.fb.group({
     work_type_id: ['', Validators.required],
