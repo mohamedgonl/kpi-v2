@@ -5,11 +5,25 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    DialogModule, 
+    TableModule, 
+    ButtonModule, 
+    InputTextModule, 
+    TagModule, 
+    TooltipModule
+  ],
   templateUrl: './tasks.component.html'
 })
 export class TasksComponent implements OnInit {
