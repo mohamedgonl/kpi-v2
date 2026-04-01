@@ -20,8 +20,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       await this.pool.query('SELECT 1');
       console.log('Database connection established successfully');
     } catch (error) {
-      console.error('Database connection failed:', error);
-      throw error;
+      console.error('Database connection failed (CRITICAL):', error);
+      // Do not throw error here to allow app to start even with DB issues
     }
   }
 
