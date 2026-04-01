@@ -20,7 +20,7 @@ export class ReportsComponent implements OnInit {
   selectedPeriodId = '';
   loading = false;
   Math = Math;
-  
+  now = new Date();
   // Pagination
   currentPage = 1;
   pageSize = 10;
@@ -143,6 +143,11 @@ export class ReportsComponent implements OnInit {
     XLSX.writeFile(wb, `Bao_cao_KPI_${new Date().getTime()}.xlsx`);
   }
 
+  getSelectedPeriodName() {
+    const p = this.periods.find(p => p.id === this.selectedPeriodId);
+    return p ? p.name : '—';
+  }
+
   async exportImage() {
     // Nhắm mục tiêu chính xác vào biểu đồ, lấy toàn bộ chiều rộng nội dung
     const element = document.getElementById('report-chart-inner');
@@ -150,6 +155,7 @@ export class ReportsComponent implements OnInit {
 
     try {
       this.loading = true;
+      this.now = new Date(); // Làm mới thời gian chụp ảnh v29.3
       const canvas = await html2canvas(element, {
         scale: 3, // Siêu sắc nét (High Quality)
         logging: false,
