@@ -25,6 +25,17 @@ async function bootstrap() {
     }),
   );
 
+  // Global Process Error Handlers to prevent crash
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't kill the process, just log it
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // You might want to gracefully exit in some cases, but for now we just log
+  });
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}/api`);

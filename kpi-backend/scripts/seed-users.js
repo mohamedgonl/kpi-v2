@@ -3,14 +3,34 @@
  * Usage: node scripts/seed-users.js
  */
 const { Client } = require('pg');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
-const DB_URL = process.argv[2] || 'postgresql://postgres.eejofwsxxpkaylxymwwq:daicalongbn01@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres';
+const fs = require('fs');
+const path = require('path');
+
+// Try to load DATABASE_URL from .env if not provided
+let DB_URL = process.argv[2];
+if (!DB_URL) {
+  try {
+    const envFile = fs.readFileSync(path.join(__dirname, '../.env'), 'utf8');
+    const match = envFile.match(/DATABASE_URL=["']?([^"'\s]+)["']?/);
+    if (match) {
+      DB_URL = match[1];
+    }
+  } catch (err) {
+    // Fall back to default if .env not found
+  }
+}
+
+if (!DB_URL) {
+  DB_URL = 'postgresql://postgres.eejofwsxxpkaylxymwwq:daicalongbn01@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres';
+}
 
 // Map Firebase users to system roles
 // Firebase 'admin' (id 1-5): vụ trưởng / vụ phó lãnh đạo
 // Firebase 'user' (id 6+): chuyên viên
 const FIREBASE_USERS = [
+  { id: 0,  name: 'Quản trị hệ thống',       email: 'the.shy.garena2@gmail.com', role: 'admin' },
   { id: 1,  name: 'Ngô Đức Minh',            role_firebase: 'admin' },
   { id: 2,  name: 'Bùi Thị Bình Giang',       role_firebase: 'admin' },
   { id: 3,  name: 'Phạm Thành Trung',          role_firebase: 'admin' },
@@ -44,7 +64,10 @@ function mapRole(user) {
   return 'vu_pho';
 }
 
-function makeEmail(id, name) {
+function makeEmail(id, name, customEmail) {
+  if (customEmail) return customEmail;
+  // Map ID 1 (Ngô Đức Minh - Vụ trưởng) to admin@moit.gov.vn
+  if (id === 1) return 'admin@moit.gov.vn';
   // Generate unique email from id; user can update later
   return `user${String(id).padStart(2, '0')}@moit.gov.vn`;
 }
@@ -63,15 +86,19 @@ async function seed() {
   let skipped = 0;
 
   for (const u of FIREBASE_USERS) {
-    const email = makeEmail(u.id, u.name);
-    const role = mapRole(u);
-    const code = makeEmployeeCode(u.id);
+    const email = makeEmail(u.id, u.name, u.email);
+    const role = u.role || mapRole(u);
+    const code = u.id === 0 ? null : makeEmployeeCode(u.id);
 
     try {
       const res = await client.query(
         `INSERT INTO users (employee_code, full_name, email, role, password_hash, is_active)
          VALUES ($1, $2, $3, $4, $5, true)
-         ON CONFLICT (email) DO NOTHING
+         ON CONFLICT (email) 
+         DO UPDATE SET 
+            password_hash = EXCLUDED.password_hash,
+            role = EXCLUDED.role,
+            is_active = true
          RETURNING id`,
         [code, u.name, email, role, passwordHash]
       );
@@ -80,7 +107,7 @@ async function seed() {
         console.log(`  ✅ [${code}] ${u.name.padEnd(30)} → ${role} (${email})`);
         inserted++;
       } else {
-        console.log(`  ⏭️  [${code}] ${u.name.padEnd(30)} → đã tồn tại, bỏ qua`);
+        console.log(`  ⏭️  [${code}] ${u.name.padEnd(30)} → không thay đổi, bỏ qua`);
         skipped++;
       }
     } catch (err) {

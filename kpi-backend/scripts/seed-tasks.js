@@ -4,7 +4,22 @@
  */
 const { Client } = require('pg');
 
-const DB_URL = process.argv[2] || 'postgresql://postgres.eejofwsxxpkaylxymwwq:daicalongbn01@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres';
+const fs = require('fs');
+const path = require('path');
+
+// Try to load DATABASE_URL from .env if not provided
+let DB_URL = process.argv[2];
+if (!DB_URL) {
+  try {
+    const envFile = fs.readFileSync(path.join(__dirname, '../.env'), 'utf8');
+    const match = envFile.match(/DATABASE_URL=["']?([^"'\s]+)["']?/);
+    if (match) DB_URL = match[1];
+  } catch (err) {}
+}
+
+if (!DB_URL) {
+  DB_URL = 'postgresql://postgres.eejofwsxxpkaylxymwwq:daicalongbn01@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres';
+}
 
 async function seed() {
   const client = new Client({ connectionString: DB_URL });
