@@ -87,13 +87,18 @@
         <div style="font-size:13px; color:var(--color-muted);">
           Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, tasks.length) }} trong tổng số {{ tasks.length }} công việc
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-           <span style="font-size:13px; color:var(--color-muted);">Chọn trang:</span>
-           <select class="form-input" style="width:75px; height:32px; padding:2px 8px; font-weight:600;" [(ngModel)]="currentPage">
-              <option *ngFor="let p of pageNumbers" [value]="p">Trang {{ p }}</option>
-           </select>
+        <div style="display:flex; gap:16px; align-items:center;">
+           <div style="display:flex; align-items:center; gap:8px;">
+             <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
+             <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+             </select>
+           </div>
            <div style="display:flex; gap:4px;">
               <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+              <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
               <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
            </div>
         </div>
