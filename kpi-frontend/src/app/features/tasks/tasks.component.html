@@ -38,18 +38,9 @@
         <table class="data-table" style="min-width: 1200px; border-collapse: separate; border-spacing: 0;">
           <thead>
             <tr>
-              <th style="min-width:250px;">
-                Tên công việc / Nội dung
-                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Tìm nhanh..." [(ngModel)]="filters.task_name" (input)="onFilterChange()">
-              </th>
-              <th style="width:150px;">
-                Nhóm 
-                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Lọc nhóm..." [(ngModel)]="filters.work_group_name" (input)="onFilterChange()">
-              </th>
-              <th style="width:200px;">
-                Loại công việc
-                <input type="text" class="form-input mt-1" style="height:28px; font-size:11px;" placeholder="Lọc loại..." [(ngModel)]="filters.work_type_name" (input)="onFilterChange()">
-              </th>
+              <th style="min-width:300px;">Tên công việc / Nội dung</th>
+              <th style="width:150px;">Nhóm</th>
+              <th style="width:200px;">Loại công việc</th>
               <th style="text-align:center;width:80px;">SL Giao</th>
               <th style="text-align:center;width:80px;">SL Thực</th>
               <th style="width:110px;">Hết hạn</th>
@@ -94,12 +85,17 @@
       <!-- Custom Pagination -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
         <div style="font-size:13px; color:var(--color-muted);">
-          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, filteredTasks.length) }} trong tổng số {{ filteredTasks.length }} công việc
+          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, tasks.length) }} trong tổng số {{ tasks.length }} công việc
         </div>
-        <div style="display:flex; gap:4px;">
-           <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
-           <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
-           <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+        <div style="display:flex; gap:12px; align-items:center;">
+           <span style="font-size:13px; color:var(--color-muted);">Chọn trang:</span>
+           <select class="form-input" style="width:75px; height:32px; padding:2px 8px; font-weight:600;" [(ngModel)]="currentPage">
+              <option *ngFor="let p of pageNumbers" [value]="p">Trang {{ p }}</option>
+           </select>
+           <div style="display:flex; gap:4px;">
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+           </div>
         </div>
       </div>
     </div>

@@ -39,11 +39,8 @@ export class TasksComponent implements OnInit {
   pageSize = 10;
 
   get filteredTasks() {
-    return this.tasks.filter(t => {
-      return (!this.filters.task_name || t.task_name.toLowerCase().includes(this.filters.task_name.toLowerCase())) &&
-             (!this.filters.work_group_name || t.work_group_name?.toLowerCase().includes(this.filters.work_group_name.toLowerCase())) &&
-             (!this.filters.work_type_name || t.work_type_name?.toLowerCase().includes(this.filters.work_type_name.toLowerCase()));
-    });
+    // Để cổng chờ cho tính năng tìm kiếm toàn cục sau này nếu cần
+    return this.tasks;
   }
 
   get pagedTasks() {
