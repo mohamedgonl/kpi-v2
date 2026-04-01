@@ -39,8 +39,8 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-          # No --prod flag → creates a Preview deployment on Vercel
+          vercel-project-id: ${{ secrets.VERCEL_BACKEND_TEST_ID }}
+          # No --prod flag → Preview/Test deployment
           working-directory: kpi-backend
         env:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
@@ -84,6 +84,6 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_TEST_ID }}
           # No --prod flag → Preview environment
           working-directory: kpi-frontend
