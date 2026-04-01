@@ -1,73 +1,63 @@
-name: Deploy TEST (test branch)
+name: Deploy TEST (Test Branch)
 
 on:
   push:
     branches: [test]
 
-env:
-  NODE_VERSION: '20'
-
 jobs:
-  # ─────────────────────────────────────────
-  # 1. Deploy Backend to Vercel (Test)
-  # ─────────────────────────────────────────
   deploy-backend:
-    name: Backend → Vercel (Test/Preview)
+    name: Backend → Vercel (Test)
     runs-on: ubuntu-latest
+    environment: kpi-v2-test # <--- Kết nối với môi trường Test bạn vừa tạo
     defaults:
       run:
         working-directory: kpi-backend
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: kpi-backend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
 
-      - name: Build
-        run: npm run build
-
-      - name: Deploy to Vercel (Preview/Test)
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_TEST_ID }}
-          # No --prod flag → Preview/Test deployment
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_BACKEND }} # Lấy từ Variables
+          vercel-args: '--prod' # Deploy thẳng lên URL chính của project test
           working-directory: kpi-backend
         env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
-          JWT_EXPIRES_IN: '7d'
-          RESEND_API_KEY: ${{ secrets.TEST_RESEND_API_KEY }}
-          FRONTEND_URL: ${{ secrets.TEST_FRONTEND_URL }}
-          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
 
-  # ─────────────────────────────────────────
-  # 2. Deploy Frontend to Vercel (Test)
-  # ─────────────────────────────────────────
   deploy-frontend:
-    name: Frontend → Vercel (Test/Preview)
+    name: Frontend → Vercel (Test)
     runs-on: ubuntu-latest
     needs: deploy-backend
+    environment: kpi-v2-test
     defaults:
       run:
         working-directory: kpi-frontend
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: kpi-frontend/package-lock.json
 
@@ -77,13 +67,13 @@ jobs:
       - name: Build (Test)
         run: npm run build -- --configuration test
         env:
-          BACKEND_API_URL: ${{ secrets.TEST_BACKEND_API_URL }}
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }} # Tự động tiêm URL backend test vào build
 
-      - name: Deploy to Vercel (Preview/Test)
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_TEST_ID }}
-          # No --prod flag → Preview environment
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
+          vercel-args: '--prod'
           working-directory: kpi-frontend

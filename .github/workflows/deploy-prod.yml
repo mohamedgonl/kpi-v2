@@ -1,73 +1,21 @@
-name: Deploy PRODUCTION (main/prod branch)
+# h:\Company\kpi\.github\workflows\deploy-prod.yml
 
-on:
-  push:
-    branches: [main]
-
-env:
-  NODE_VERSION: '20'
-
-jobs:
-  # ─────────────────────────────────────────
-  # 1. Deploy Backend to Vercel (NestJS)
-  # ─────────────────────────────────────────
-  deploy-backend:
-    name: Backend → Vercel (Production)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: kpi-backend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: kpi-backend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: kpi-backend
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.PROD_JWT_SECRET }}
-          JWT_EXPIRES_IN: '7d'
-          RESEND_API_KEY: ${{ secrets.PROD_RESEND_API_KEY }}
-          FRONTEND_URL: ${{ secrets.PROD_FRONTEND_URL }}
-          NODE_ENV: production
-
-  # ─────────────────────────────────────────
-  # 2. Deploy Frontend to Vercel (Angular)
-  # ─────────────────────────────────────────
   deploy-frontend:
     name: Frontend → Vercel (Production)
     runs-on: ubuntu-latest
     needs: deploy-backend
+    environment: kpi-v2-prod
     defaults:
       run:
         working-directory: kpi-frontend
-
     steps:
       - uses: actions/checkout@v4
-
+      
+      # Thêm lại bước này để đảm bảo build Angular chuẩn
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: kpi-frontend/package-lock.json
 
@@ -77,14 +25,13 @@ jobs:
       - name: Build (Production)
         run: npm run build -- --configuration production
         env:
-          # Inline API URL for production build
-          BACKEND_API_URL: ${{ secrets.PROD_BACKEND_API_URL }}
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
 
-      - name: Deploy to Vercel (Production)
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
           vercel-args: '--prod'
           working-directory: kpi-frontend

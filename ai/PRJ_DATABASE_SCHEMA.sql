@@ -37,7 +37,7 @@ CREATE TABLE users (
     phone               VARCHAR(20),
     position            VARCHAR(255),                      -- Chức danh (ví dụ: Chuyên viên chính)
     role                user_role NOT NULL DEFAULT 'chuyen_vien',
-    password_hash       TEXT NOT NULL,                     -- bcrypt hash, mặc định hash('123456')
+    password_hash       TEXT NOT NULL,                     -- bcryptjs hash, mặc định hash('123456')
     avatar_url          TEXT,
     is_active           BOOLEAN NOT NULL DEFAULT TRUE,
     last_login_at       TIMESTAMPTZ,
@@ -531,7 +531,7 @@ COMMENT ON TABLE grading_configs        IS 'Ngưỡng xếp loại A/B/C/D. Áp 
 COMMENT ON TABLE notifications          IS 'Thông báo trong hệ thống.';
 COMMENT ON TABLE audit_logs             IS 'Lịch sử thao tác. Ghi từ application layer.';
 
-COMMENT ON COLUMN users.password_hash   IS 'bcrypt hash của mật khẩu. Mật khẩu mặc định: 123456. Admin có thể reset về 123456 qua tính năng quản lý user.';
+COMMENT ON COLUMN users.password_hash   IS 'bcryptjs hash của mật khẩu. Mật khẩu mặc định: 123456. Admin có thể reset về 123456 qua tính năng quản lý user.';
 COMMENT ON COLUMN work_types.coefficient IS 'Hệ số quy đổi. col7 = coefficient × assigned_qty, col9 = coefficient × actual_qty.';
 COMMENT ON COLUMN tasks.rework_count    IS 'Số lần làm lại. Ảnh hưởng chất lượng: col14 = MAX(0, col9 - rework_count × 0.25 × col9).';
 COMMENT ON COLUMN tasks.deadline        IS 'Hạn hoàn thành. delay_days = MAX(0, completion_date - deadline). Ảnh hưởng tiến độ: col12 = MAX(0, col9 - delay_days × 0.25 × col9).';
