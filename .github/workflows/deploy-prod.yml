@@ -1,5 +1,10 @@
 # h:\Company\kpi\.github\workflows\deploy-prod.yml
+name: Deploy PROD (Prod Branch)
+on:
+  push:
+    branches: [prod]
 
+jobs:
   deploy-frontend:
     name: Frontend → Vercel (Production)
     runs-on: ubuntu-latest
