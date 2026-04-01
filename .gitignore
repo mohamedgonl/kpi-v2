@@ -15,10 +15,10 @@ Thumbs.db
 # --- Backend (NestJS) ---
 kpi-backend/dist/
 kpi-backend/*-debug.log
-kpi-backend/.env
-kpi-backend/.env.production
-kpi-backend/.env.test
-kpi-backend/.env.local
+# kpi-backend/.env
+# kpi-backend/.env.production
+# kpi-backend/.env.test
+# kpi-backend/.env.local
 
 # --- Frontend (Angular) ---
 kpi-frontend/.angular/
