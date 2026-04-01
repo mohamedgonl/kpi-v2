@@ -23,6 +23,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { message: (exception as Error).message || 'Internal Server Error' };
 
+    // Determine if we should show details (better debugging in dev)
+    const isProd = process.env.NODE_ENV === 'production';
+
     // Prevent crashing on Vercel by ensuring 200/400/500 responses are well-formed JSON
     response.status(status).json({
       data: null,
@@ -31,6 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         statusCode: status,
         message: typeof message === 'string' ? message : (message as any).message || 'Server Error',
         details: typeof message === 'object' ? message : null,
+        stack: !isProd && exception instanceof Error ? exception.stack : undefined,
       },
     });
   }
