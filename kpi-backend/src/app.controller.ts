@@ -7,6 +7,11 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    return 'KPI Backend System - Online';
+  }
+
+  @Get('ping')
+  getPing(): string {
+    return 'pong';
   }
 }

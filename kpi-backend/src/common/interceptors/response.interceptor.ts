@@ -14,30 +14,19 @@ export class ResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((res: unknown) => {
-        const responseData = typeof res === 'object' && res !== null && 'data' in res ? (res as any).data : res;
-        const metaData = typeof res === 'object' && res !== null && 'meta' in res ? (res as any).meta : undefined;
+        // If it's already formatted or it's a stream, return as is
+        if (res && typeof res === 'object' && ('data' in res || 'error' in res)) {
+          return res;
+        }
+
+        const responseData = res;
+        const metaData = undefined;
 
         return {
           data: responseData,
           meta: metaData,
           error: null,
         };
-      }),
-      catchError((err) => {
-        const status =
-          err instanceof HttpException ? err.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-
-        const errorResponse = {
-          data: null,
-          meta: null,
-          error: {
-            statusCode: status,
-            message: err.message || 'Internal Server Error',
-            details: err.response?.message || err.response || null,
-          },
-        };
-
-        return throwError(() => new HttpException(errorResponse, status));
       }),
     );
   }

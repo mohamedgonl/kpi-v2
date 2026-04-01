@@ -7,8 +7,12 @@ async function bootstrap() {
   
   app.setGlobalPrefix('api');
   
+  // Register Global Safety Net
+  const { AllExceptionsFilter } = require('./common/filters/all-exceptions.filter');
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   app.enableCors({
-    origin: '*', // Define specific frontend domains in production instead of '*'
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
