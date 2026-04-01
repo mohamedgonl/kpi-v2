@@ -92,9 +92,12 @@ export class AuthService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:4200';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
     
+    // Lấy thông tin email người gửi từ biến môi trường, mặc định dùng email test
+    const fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 'KPI System <onboarding@resend.dev>';
+
     try {
       await this.resend.emails.send({
-        from: 'KPI System <onboarding@resend.dev>', // Update this when you have a custom domain on Resend
+        from: fromEmail,
         to: email, // Resend free tier might restrict to verified domains only
         subject: 'Yêu cầu khôi phục mật khẩu Hệ thống KPI',
         html: `
