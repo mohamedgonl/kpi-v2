@@ -1,8 +1,11 @@
 <div class="topbar">
   <div class="topbar-title">Báo cáo KPI đơn vị</div>
   <div class="topbar-actions">
+    <button class="btn btn-outline btn-sm" (click)="exportImage()" [disabled]="reportData.length === 0">
+      <i class="pi pi-image" style="color:#ec4899"></i> Xuất ảnh
+    </button>
     <button class="btn btn-outline btn-sm" (click)="exportExcel()" [disabled]="reportData.length === 0">
-      <i class="pi pi-file-excel"></i> Xuất Excel
+      <i class="pi pi-file-excel" style="color:#16a34a"></i> Xuất Excel
     </button>
     <select class="form-input" style="width:auto;padding:6px 12px;" (change)="onPeriodChange($event)">
       <option value="">-- Chọn kỳ --</option>
@@ -26,13 +29,15 @@
       <div class="card-header">
         <div class="card-title"><i class="pi pi-chart-bar" style="margin-right:8px;color:var(--color-accent)"></i>Biểu đồ KPI nhân sự</div>
       </div>
-      <div style="height: 100%;width:100%;">
-        <p-chart type="bar" [data]="chartData" [options]="chartOptions"></p-chart>
+      <div id="report-chart-container" style="overflow-x: auto; padding-bottom: 10px;">
+        <div [style.minWidth.px]="Math.max(800, reportData.length * 50)">
+          <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="350px"></p-chart>
+        </div>
       </div>
     </div>
 
     <!-- Table Section -->
-    <div class="card">
+    <div class="card" id="report-table-card">
       <div class="card-header">
         <div>
           <div class="card-title">Bảng tổng hợp kết quả</div>
@@ -45,57 +50,80 @@
         Không có dữ liệu cho kỳ này
       </div>
 
-      <div class="table-responsive" style="overflow-x:auto;" *ngIf="reportData.length > 0">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:40px;">STT</th>
-              <th>Họ tên</th>
-              <th>Chức vụ</th>
-              <th style="text-align:center">SL Giao (7)</th>
-              <th style="text-align:center">SL Thực (9)</th>
-              <th style="text-align:center">a% (SL)</th>
-              <th style="text-align:center">b% (CL)</th>
-              <th style="text-align:center">c% (TD)</th>
-              <th style="text-align:center;background:#f1f5f9;">KPI</th>
-              <th style="text-align:center">Loại</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of reportData; let i = index">
-              <td style="text-align:center;color:var(--color-muted);">{{ i + 1 }}</td>
-              <td><strong>{{ row.user_name || row.full_name }}</strong></td>
-              <td style="color:var(--color-muted);">{{ row.position || '—' }}</td>
-              <td style="text-align:center">{{ row.total_col7 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ row.total_col9 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ row.a | number:'1.1-1' }}%</td>
-              <td style="text-align:center">{{ row.b | number:'1.1-1' }}%</td>
-              <td style="text-align:center">{{ row.c | number:'1.1-1' }}%</td>
-              <td style="text-align:center;background:#fffaf0;font-size:14px;">
-                <strong>{{ row.kpi | number:'1.1-1' }}%</strong>
-              </td>
-              <td style="text-align:center">
-                <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
-              </td>
-            </tr>
-            <!-- Footer Row -->
-            <tr style="background:#f8fafc;font-weight:700;color:var(--color-primary)">
-              <td colspan="3" style="text-align:right;">TỔNG CỘNG ĐƠN VỊ:</td>
-              <td style="text-align:center">{{ totalUnitCol7 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ totalUnitCol9 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ unitA | number:'1.1-1' }}%</td>
-              <td style="text-align:center">{{ unitB | number:'1.1-1' }}%</td>
-              <td style="text-align:center">{{ unitC | number:'1.1-1' }}%</td>
-              <td style="text-align:center;background:#fffaf0;">
-                  <strong>{{ unitKPI | number:'1.1-1' }}%</strong>
-              </td>
-              <td style="text-align:center">
-                <span class="grade-badge" [class]="gradeClass(unitKPI)">{{ grade(unitKPI) }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="table-container" *ngIf="reportData.length > 0">
+        <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
+          <table class="data-table" style="min-width: 1000px; border-collapse: separate; border-spacing: 0;">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center; position:sticky; left:0; background:var(--color-bg-alt); z-index:3;">STT</th>
+                <th style="min-width:180px; position:sticky; left:40px; background:var(--color-bg-alt); z-index:3; border-right:1px solid var(--color-border);">Họ tên</th>
+                <th style="width:150px;">Chức vụ</th>
+                <th style="text-align:center; width:90px;">SL Giao (7)</th>
+                <th style="text-align:center; width:90px;">SL Thực (9)</th>
+                <th style="text-align:center; width:90px;">a% (SL)</th>
+                <th style="text-align:center; width:90px;">b% (CL)</th>
+                <th style="text-align:center; width:90px;">c% (TD)</th>
+                <th style="text-align:center; width:100px; background:#f1f5f9;">KPI</th>
+                <th style="text-align:center; width:80px;">Loại</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of pagedData; let i = index">
+                <td style="text-align:center; color:var(--color-muted); position:sticky; left:0; background:white; z-index:2;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                <td style="position:sticky; left:40px; background:white; z-index:2; border-right:1px solid var(--color-border);">
+                  <strong>{{ row.user_name || row.full_name }}</strong>
+                </td>
+                <td style="color:var(--color-muted);">{{ row.position || '—' }}</td>
+                <td style="text-align:center">{{ row.total_col7 | number:'1.1-1' }}</td>
+                <td style="text-align:center">{{ row.total_col9 | number:'1.1-1' }}</td>
+                <td style="text-align:center">{{ row.a | number:'1.1-1' }}%</td>
+                <td style="text-align:center">{{ row.b | number:'1.1-1' }}%</td>
+                <td style="text-align:center">{{ row.c | number:'1.1-1' }}%</td>
+                <td style="text-align:center;background:#fffaf0;font-size:14px;"><strong>{{ row.kpi | number:'1.1-1' }}%</strong></td>
+                <td style="text-align:center">
+                  <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
+                </td>
+              </tr>
+              <!-- Footer Row for Totals -->
+              <tr style="background:#f8fafc; font-weight:700; color:var(--color-primary)">
+                <td colspan="3" style="text-align:right; position:sticky; left:0; background:#f8fafc; z-index:2; border-right:1px solid var(--color-border);">TỔNG CỘNG ĐƠN VỊ:</td>
+                <td style="text-align:center">{{ totalUnitCol7 | number:'1.1-1' }}</td>
+                <td style="text-align:center">{{ totalUnitCol9 | number:'1.1-1' }}</td>
+                <td style="text-align:center">{{ unitA | number:'1.1-1' }}%</td>
+                <td style="text-align:center">{{ unitB | number:'1.1-1' }}%</td>
+                <td style="text-align:center">{{ unitC | number:'1.1-1' }}%</td>
+                <td style="text-align:center; background:#fffaf0;"><strong>{{ unitKPI | number:'1.1-1' }}%</strong></td>
+                <td style="text-align:center">
+                  <span class="grade-badge" [class]="gradeClass(unitKPI)">{{ grade(unitKPI) }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Custom Pagination -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
+          <div style="font-size:13px; color:var(--color-muted);">
+            Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, reportData.length) }} trong tổng số {{ reportData.length }} cán bộ
+          </div>
+          <div style="display:flex; gap:16px; align-items:center;">
+             <div style="display:flex; align-items:center; gap:8px;">
+               <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
+               <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+               </select>
+             </div>
+             <div style="display:flex; gap:4px;">
+                <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+                <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
+                <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+             </div>
+          </div>
+        </div>
       </div>
+    </div>
     </div>
   </ng-container>
 </div>

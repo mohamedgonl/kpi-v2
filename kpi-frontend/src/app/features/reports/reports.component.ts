@@ -1,13 +1,15 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ChartModule } from 'primeng/chart';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, ChartModule],
+  imports: [CommonModule, ChartModule, FormsModule],
   templateUrl: './reports.component.html'
 })
 export class ReportsComponent implements OnInit {
@@ -17,7 +19,12 @@ export class ReportsComponent implements OnInit {
   reportData: any[] = [];
   selectedPeriodId = '';
   loading = false;
+  Math = Math;
   
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
   // Chart data
   chartData: any;
   chartOptions: any;
@@ -63,8 +70,20 @@ export class ReportsComponent implements OnInit {
     this.api.get<any>('dashboard/leaderboard', params).subscribe(res => {
       this.reportData = res.data || [];
       this.updateChart();
+      this.currentPage = 1;
       this.loading = false;
     });
+  }
+
+  // Pagination Getters
+  get pagedData() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.reportData.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.reportData.length / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
 
   updateChart() {
@@ -105,7 +124,6 @@ export class ReportsComponent implements OnInit {
       'Xếp loại': this.grade(row.kpi)
     }));
 
-    // Add totals row
     data.push({
       'STT': '',
       'Họ tên': 'TỔNG CỘNG ĐƠN VỊ',
@@ -123,6 +141,31 @@ export class ReportsComponent implements OnInit {
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo KPI');
     XLSX.writeFile(wb, `Bao_cao_KPI_${new Date().getTime()}.xlsx`);
+  }
+
+  async exportImage() {
+    // Tìm phần tử nội dung chính của trang báo cáo
+    const element = document.querySelector('.page-content') as HTMLElement;
+    if (!element) return;
+
+    try {
+      this.loading = true;
+      const canvas = await html2canvas(element, {
+        scale: 2, // Tăng chất lượng ảnh
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#f1f5f9'
+      });
+      
+      const link = document.createElement('a');
+      link.download = `Bao_cao_KPI_${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      this.loading = false;
+    } catch (err) {
+      console.error('Lỗi khi xuất ảnh:', err);
+      this.loading = false;
+    }
   }
 
   get totalUnitCol7() { return this.reportData.reduce((s, r) => s + Number(r.total_col7 || 0), 0); }
