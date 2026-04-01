@@ -22,11 +22,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: kpi-backend/package-lock.json
 
-      - name: Install & Build
-        run: |
-          npm ci
-          npm run build
-
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
