@@ -1,0 +1,101 @@
+<div class="topbar">
+  <div class="topbar-title">Quản lý Nhóm công việc</div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" (click)="addNew()">
+      <i class="pi pi-plus"></i> Thêm mới
+    </button>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Danh sách các nhóm công việc</div>
+    </div>
+
+    <div class="table-responsive" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:80px;">Sắp xếp</th>
+            <th style="width:120px;">Mã nhóm</th>
+            <th>Tên nhóm công việc</th>
+            <th>Loại</th>
+            <th style="width:100px;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let g of workGroups">
+            <td>
+              <span style="font-weight:700;color:var(--color-muted);">{{ g.sort_order }}</span>
+            </td>
+            <td><strong>{{ g.code }}</strong></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                 <div [style.background]="g.color_hex" style="width:14px;height:14px;border-radius:3px;"></div>
+                 {{ g.name }}
+              </div>
+            </td>
+            <td>
+              <span class="chip chip-info" [style.background]="g.color_hex + '20'" [style.color]="g.color_hex">
+                {{ g.description || '—' }}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editItem(g)"><i class="pi pi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteItem(g.id)"><i class="pi pi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Dialog -->
+<p-dialog [header]="editingItem ? 'Sửa nhóm công việc' : 'Thêm nhóm công việc mới'" 
+          [(visible)]="showForm" 
+          [modal]="true" 
+          [style]="{width: '450px'}" 
+          [draggable]="false" 
+          [resizable]="false">
+  
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
+    <div class="form-group">
+      <label class="form-label">Mã nhóm <span class="text-danger">*</span></label>
+      <input type="text" pInputText formControlName="code" class="form-input" placeholder="Ví dụ: N01">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tên nhóm công việc <span class="text-danger">*</span></label>
+      <input type="text" pInputText formControlName="name" class="form-input" placeholder="Ví dụ: Nhóm I">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mô tả / Phân loại</label>
+      <input type="text" pInputText formControlName="description" class="form-input" placeholder="Ví dụ: Công tác chuyên môn">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Màu sắc hiển thị</label>
+        <input type="color" formControlName="color_hex" class="form-input" style="height:42px;padding:4px;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Thứ tự sắp xếp</label>
+        <input type="number" formControlName="sort_order" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px;">
+      <button type="button" class="btn btn-outline" (click)="showForm = false">Hủy</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <i class="pi pi-check" *ngIf="!loading"></i>
+        <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
+        Lưu dữ liệu
+      </button>
+    </div>
+  </form>
+</p-dialog>

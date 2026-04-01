@@ -1,0 +1,117 @@
+<div class="topbar">
+  <div class="topbar-title">Quản lý Tài khoản</div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" (click)="addNew()">
+      <i class="pi pi-user-plus"></i> Thêm tài khoản
+    </button>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Danh sách nhân sự ({{ users.length }})</div>
+    </div>
+
+    <div class="table-responsive" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">AVT</th>
+            <th>Họ và tên</th>
+            <th>Email / Tài khoản</th>
+            <th>Số hiệu / MSNV</th>
+            <th>Chức vụ</th>
+            <th style="width:120px;text-align:center;">Vai trò</th>
+            <th style="width:150px;text-align:right;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td>
+              <div class="user-avatar" style="width:30px;height:30px;font-size:11px;">
+                {{ u.full_name?.charAt(0) || 'U' }}
+              </div>
+            </td>
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td>
+              <div style="font-size:13px;">{{ u.email }}</div>
+              <div style="font-size:11px;color:var(--color-muted);" *ngIf="u.phone">{{ u.phone }}</div>
+            </td>
+            <td>{{ u.employee_code || '—' }}</td>
+            <td>{{ u.position || '—' }}</td>
+            <td style="text-align:center;">
+              <span class="chip" [class]="getRoleBadge(u.role)">{{ roleLabel(u.role) }}</span>
+            </td>
+            <td style="text-align:right;">
+              <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editUser(u)" title="Sửa"><i class="pi pi-user-edit"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-info);" (click)="resetPwd(u.id)" title="Reset mật khẩu"><i class="pi pi-key"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteUser(u.id)" title="Xóa"><i class="pi pi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit User Dialog -->
+<p-dialog [header]="editingUser ? 'Cập nhật tài khoản' : 'Thêm tài khoản mới'" 
+          [(visible)]="showForm" 
+          [modal]="true" 
+          [style]="{width: '550px'}" 
+          [draggable]="false" [resizable]="false">
+  
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+        <input type="text" formControlName="full_name" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email / Username <span class="text-danger">*</span></label>
+        <input type="email" formControlName="email" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Mã nhân viên / Số hiệu</label>
+        <input type="text" formControlName="employee_code" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Số điện thoại</label>
+        <input type="text" formControlName="phone" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Chức vụ cụ thể</label>
+        <input type="text" formControlName="position" class="form-input" placeholder="Ví dụ: Chuyên viên chính">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vai trò hệ thống <span class="text-danger">*</span></label>
+        <select formControlName="role" class="form-input">
+          <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" *ngIf="!editingUser">
+      <label class="form-label">Mật khẩu khởi tạo <span class="text-danger">*</span></label>
+      <input type="password" formControlName="password" class="form-input" placeholder="Tối thiểu 6 ký tự">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px;">
+      <button type="button" class="btn btn-outline" (click)="showForm = false">Bỏ qua</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <i class="pi pi-check" *ngIf="!loading"></i>
+        <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
+        Lưu thay đổi
+      </button>
+    </div>
+  </form>
+</p-dialog>

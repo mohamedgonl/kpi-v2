@@ -1,0 +1,89 @@
+name: Deploy TEST (test branch)
+
+on:
+  push:
+    branches: [test]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─────────────────────────────────────────
+  # 1. Deploy Backend to Vercel (Test)
+  # ─────────────────────────────────────────
+  deploy-backend:
+    name: Backend → Vercel (Test/Preview)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kpi-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: kpi-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Vercel (Preview/Test)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+          # No --prod flag → creates a Preview deployment on Vercel
+          working-directory: kpi-backend
+        env:
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+          JWT_EXPIRES_IN: '7d'
+          RESEND_API_KEY: ${{ secrets.TEST_RESEND_API_KEY }}
+          FRONTEND_URL: ${{ secrets.TEST_FRONTEND_URL }}
+          NODE_ENV: test
+
+  # ─────────────────────────────────────────
+  # 2. Deploy Frontend to Vercel (Test)
+  # ─────────────────────────────────────────
+  deploy-frontend:
+    name: Frontend → Vercel (Test/Preview)
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    defaults:
+      run:
+        working-directory: kpi-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: kpi-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Development)
+        run: npm run build -- --configuration development
+        env:
+          BACKEND_API_URL: ${{ secrets.TEST_BACKEND_API_URL }}
+
+      - name: Deploy to Vercel (Preview/Test)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          # No --prod flag → Preview environment
+          working-directory: kpi-frontend

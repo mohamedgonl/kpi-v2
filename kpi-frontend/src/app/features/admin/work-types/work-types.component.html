@@ -1,0 +1,102 @@
+<div class="topbar">
+  <div class="topbar-title">Danh mục Loại công việc</div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" (click)="addNew()">
+      <i class="pi pi-plus"></i> Thêm loại công việc
+    </button>
+  </div>
+</div>
+
+<div class="page-content">
+  <div *ngFor="let group of workGroups" class="card">
+    <div class="card-header" [style.border-left]="'4px solid ' + group.color_hex" style="padding-left:12px;">
+      <div>
+        <div class="card-title">{{ group.name }}: {{ group.description }}</div>
+        <div class="card-subtitle" style="font-size:11px;">Mã nhóm: {{ group.code }}</div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">STT</th>
+            <th>Tên loại công việc</th>
+            <th>Đơn vị tính / Sản phẩm</th>
+            <th style="width:100px;text-align:center;">Hệ số</th>
+            <th style="width:120px;text-align:right;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let type of getTypesForGroup(group.id)">
+            <td style="color:var(--color-muted);">{{ type.sort_order }}</td>
+            <td><strong>{{ type.name }}</strong></td>
+            <td><span class="chip chip-neutral" style="font-weight:normal;">{{ type.product_type || '—' }}</span></td>
+            <td style="text-align:center;">
+              <span style="font-weight:700;color:var(--color-accent);">{{ type.coefficient | number:'1.1-1' }}</span>
+            </td>
+            <td style="text-align:right;">
+              <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editItem(type)"><i class="pi pi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteItem(type.id)"><i class="pi pi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="getTypesForGroup(group.id).length === 0">
+            <td colspan="5" style="text-align:center;padding:20px;color:var(--color-muted);font-style:italic;">
+              Chưa có loại công việc nào trong nhóm này
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Dialog -->
+<p-dialog [header]="editingItem ? 'Cập nhật loại công việc' : 'Thêm loại công việc mới'" 
+          [(visible)]="showForm" 
+          [modal]="true" 
+          [style]="{width: '500px'}" 
+          [draggable]="false" [resizable]="false">
+  
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
+    <div class="form-group">
+      <label class="form-label">Nhóm công việc cha <span class="text-danger">*</span></label>
+      <select formControlName="group_id" class="form-input">
+        <option value="">-- Chọn nhóm --</option>
+        <option *ngFor="let g of workGroups" [value]="g.id">{{ g.name }} ({{ g.code }})</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tên loại công việc <span class="text-danger">*</span></label>
+      <input type="text" formControlName="name" class="form-input" placeholder="Ví dụ: Soạn thảo văn bản">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Đơn vị tính / Sản phẩm</label>
+      <input type="text" formControlName="product_type" class="form-input" placeholder="Ví dụ: Trang A4 / Quyết định">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Hệ số quy đổi <span class="text-danger">*</span></label>
+        <input type="number" step="0.1" formControlName="coefficient" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Thứ tự hiển thị</label>
+        <input type="number" formControlName="sort_order" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px;">
+      <button type="button" class="btn btn-outline" (click)="showForm = false">Bỏ qua</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <i class="pi pi-check" *ngIf="!loading"></i>
+        <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
+        Lưu thông tin
+      </button>
+    </div>
+  </form>
+</p-dialog>

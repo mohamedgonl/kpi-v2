@@ -1,0 +1,50 @@
+<div class="app-shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon-box">
+        <i class="pi pi-chart-line" style="font-size: 20px; color: #fff;"></i>
+      </div>
+      <div>
+        <div class="logo-text">KPI MANAGER</div>
+        <div class="logo-sub">DASHBOARD & REPORTS</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">Nghiệp vụ</div>
+    <ng-container *ngFor="let item of mainNav">
+      <a *ngIf="canSeeNav(item)" [routerLink]="item.route" routerLinkActive="active" class="nav-item">
+        <i class="nav-icon pi {{item.icon}}"></i>
+        {{ item.label }}
+      </a>
+    </ng-container>
+
+    <ng-container *ngIf="auth.hasRole('admin')">
+      <div class="sidebar-section">Quản trị hệ thống</div>
+      <a *ngFor="let item of adminNav" [routerLink]="item.route" routerLinkActive="active" class="nav-item">
+        <i class="nav-icon pi {{item.icon}}"></i>
+        {{ item.label }}
+      </a>
+    </ng-container>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">{{ userInitials }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ auth.currentUser?.full_name }}</div>
+          <div class="user-role">{{ roleLabel }}</div>
+        </div>
+        <button class="btn btn-sm btn-outline" style="margin-left:auto;padding:4px 8px;border-color:rgba(255,255,255,0.2);color:#fff;background:transparent;" (click)="auth.logout()">
+          <i class="pi pi-sign-out"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main-content">
+    <router-outlet />
+  </div>
+
+  <p-toast position="top-right"></p-toast>
+</div>

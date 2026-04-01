@@ -1,0 +1,99 @@
+<div class="topbar">
+  <div class="topbar-title">Bảng điều khiển</div>
+  <div class="topbar-actions">
+    <select class="form-input" style="width:auto;padding:6px 12px;height:36px;" (change)="onPeriodChange($event)">
+      <option value="">-- Chọn kỳ --</option>
+      <option *ngFor="let p of periods" [value]="p.id" [selected]="p.id === selectedPeriodId">
+        {{ p.name }} {{ p.is_active ? '(Hiện tại)' : '' }}
+      </option>
+    </select>
+  </div>
+</div>
+
+<div class="page-content">
+  <!-- Loading Spinner -->
+  <div class="card" *ngIf="loading">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p>Đang tải dữ liệu tổng quan...</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <!-- My KPI Summary Card -->
+    <div class="card" *ngIf="myKpi">
+    <div class="card-header">
+      <div class="card-title">Kết quả cá nhân: {{ myKpi.user_name || myKpi.full_name }}</div>
+    </div>
+    
+    <div class="stat-cards">
+      <div class="stat-card" [style.--card-accent]="getKpiColor(myKpi.kpi)">
+        <div class="stat-label">Tổng điểm KPI</div>
+        <div class="stat-value">{{ myKpi.kpi }}%</div>
+        <div class="stat-change" [class]="myKpi.kpi >= 70 ? 'up' : 'down'">
+          Xếp loại: {{ grade(myKpi.kpi) }}
+        </div>
+      </div>
+      <div class="stat-card" style="--card-accent: var(--color-success)">
+        <div class="stat-label">a% (Số lượng)</div>
+        <div class="stat-value">{{ myKpi.a }}%</div>
+      </div>
+      <div class="stat-card" style="--card-accent: var(--color-info)">
+        <div class="stat-label">b% (Chất lượng)</div>
+        <div class="stat-value">{{ myKpi.b }}%</div>
+      </div>
+      <div class="stat-card" style="--card-accent: var(--color-warning)">
+        <div class="stat-label">c% (Tiến độ)</div>
+        <div class="stat-value">{{ myKpi.c }}%</div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!myKpi && !loading" class="card" style="text-align:center;padding:40px;color:var(--color-muted);">
+    Chưa có dữ liệu KPI cho bạn trong kỳ này.
+  </div>
+
+  <!-- Admin Leaderboard -->
+  <div class="card" *ngIf="showSummary && summaryData.length > 0">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Bảng xếp hạng đơn vị</div>
+        <div class="card-subtitle">Xếp hạng theo điểm KPI từ cao xuống thấp</div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">Hạng</th>
+            <th>Họ và tên</th>
+            <th style="text-align:center;">KPI</th>
+            <th style="text-align:center;">Loại</th>
+            <th>Tiến độ công việc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of summaryData; let i = index">
+            <td style="text-align:center;">
+               <div style="font-weight:800;color:var(--color-muted);" [style.color]="i < 3 ? 'var(--color-accent)' : ''">
+                  {{ i + 1 }}
+               </div>
+            </td>
+            <td><strong>{{ row.user_name || row.full_name }}</strong></td>
+            <td style="text-align:center;"><strong>{{ row.kpi }}%</strong></td>
+            <td style="text-align:center;">
+              <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
+            </td>
+            <td>
+              <div style="width:100%;background:#e2e8f0;height:8px;border-radius:4px;overflow:hidden;margin-top:4px;">
+                 <div [style.width]="row.kpi + '%'" [style.background]="getKpiColor(row.kpi)" style="height:100%;"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </ng-container>
+</div>

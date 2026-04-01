@@ -1,0 +1,155 @@
+<div class="topbar">
+  <div class="topbar-title">Quản lý Công việc của tôi</div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" (click)="addNew()">
+      <i class="pi pi-plus-circle"></i> Thêm công việc
+    </button>
+    <select class="form-input" style="width:auto;padding:6px 12px;height:36px;" (change)="onPeriodChange($event)">
+      <option value="">-- Chọn kỳ --</option>
+      <option *ngFor="let p of periods" [value]="p.id" [selected]="p.id === selectedPeriodId">
+        {{ p.name }}
+      </option>
+    </select>
+  </div>
+</div>
+
+<div class="page-content">
+  <!-- Loading Spinner -->
+  <div class="card" *ngIf="loading">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p>Đang tải danh sách công việc...</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Danh sách công việc trong kỳ ({{ tasks.length }})</div>
+    </div>
+
+    <div *ngIf="tasks.length === 0" style="text-align:center;padding:60px;color:var(--color-muted);">
+      <i class="pi pi-briefcase" style="font-size:2.5rem;margin-bottom:12px;display:block;opacity:0.3;"></i>
+      Chưa có công việc nào được ghi nhận trong kỳ này.
+    </div>
+
+    <div class="table-responsive" style="overflow-x:auto;" *ngIf="tasks.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tên công việc / Nội dung</th>
+            <th style="width:120px;">Loại / Nhóm</th>
+            <th style="text-align:center;width:80px;">SL Giao</th>
+            <th style="text-align:center;width:80px;">SL Thực</th>
+            <th style="width:110px;">Hết hạn</th>
+            <th style="width:120px;text-align:center;">Trạng thái</th>
+            <th style="width:100px;text-align:right;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tasks">
+            <td>
+              <div style="font-weight:700;">{{ t.task_name }}</div>
+              <div style="font-size:11px;color:var(--color-muted);" *ngIf="t.reference_code">MS: {{ t.reference_code }}</div>
+            </td>
+            <td>
+               <div style="font-size:12px;">{{ t.work_type_name }}</div>
+               <div style="font-size:10px;color:var(--color-muted);">{{ t.work_group_name }}</div>
+            </td>
+            <td style="text-align:center;">{{ t.assigned_qty }}</td>
+            <td style="text-align:center;"><strong>{{ t.actual_qty }}</strong></td>
+            <td>
+              <div style="font-size:12px;">{{ t.deadline | date:'dd/MM/yyyy' }}</div>
+            </td>
+            <td style="text-align:center;">
+              <span class="chip" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+            </td>
+            <td style="text-align:right;">
+               <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </ng-container>
+</div>
+
+<!-- Task Dialog -->
+<p-dialog [header]="editingTask ? 'Cập nhật công việc' : 'Thêm công việc mới'" 
+          [(visible)]="showForm" 
+          [modal]="true" 
+          [style]="{width: '600px'}" 
+          [draggable]="false" [resizable]="false">
+  
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
+    <div class="form-group">
+      <label class="form-label">Tên công việc / Nội dung thực hiện <span class="text-danger">*</span></label>
+      <input type="text" formControlName="task_name" class="form-input" placeholder="Ví dụ: Xây dựng dự thảo Quyết định...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Loại công việc <span class="text-danger">*</span></label>
+      <select formControlName="work_type_id" class="form-input">
+        <option value="">-- Chọn loại công việc --</option>
+        <optgroup *ngFor="let g of workGroups" [label]="g.name">
+          <option *ngFor="let t of getTypesForGroup(g.id)" [value]="t.id">{{ t.name }} (HS: {{ t.coefficient }})</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">SL Giao / Định mức <span class="text-danger">*</span></label>
+        <input type="number" formControlName="assigned_qty" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">SL Đã thực hiện <span class="text-danger">*</span></label>
+        <input type="number" formControlName="actual_qty" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Hạn hoàn thành (Deadline)</label>
+        <input type="date" formControlName="deadline" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ngày thực tế hoàn thành</label>
+        <input type="date" formControlName="completion_date" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Trạng thái công việc</label>
+        <select formControlName="status" class="form-input">
+          <option value="pending">Đang thực hiện</option>
+          <option value="completed">Đã hoàn thành</option>
+          <option value="cancelled">Hủy bỏ / Tạm dừng</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã số tham chiếu (Số văn bản...)</label>
+        <input type="text" formControlName="reference_code" class="form-input">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ghi chú thêm</label>
+      <textarea formControlName="note" class="form-input" style="height:80px;"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px;">
+      <button type="button" class="btn btn-outline" (click)="showForm = false">Bỏ qua</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <i class="pi pi-save" *ngIf="!loading"></i>
+        <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
+        Lưu công việc
+      </button>
+    </div>
+  </form>
+</p-dialog>
