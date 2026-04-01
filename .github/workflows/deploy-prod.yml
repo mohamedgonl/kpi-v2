@@ -44,6 +44,7 @@ jobs:
           FRONTEND_URL: ${{ vars.FRONTEND_URL }}
           NODE_ENV: 'production'
 
+jobs:
   deploy-frontend:
     name: Frontend → Vercel (Production)
     runs-on: ubuntu-latest
