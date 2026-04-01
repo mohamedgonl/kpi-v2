@@ -62,37 +62,57 @@
       </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width:50px;">Hạng</th>
-            <th>Họ và tên</th>
-            <th style="text-align:center;">KPI</th>
-            <th style="text-align:center;">Loại</th>
-            <th>Tiến độ công việc</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of summaryData; let i = index">
-            <td style="text-align:center;">
-               <div style="font-weight:800;color:var(--color-muted);" [style.color]="i < 3 ? 'var(--color-accent)' : ''">
-                  {{ i + 1 }}
-               </div>
-            </td>
-            <td><strong>{{ row.user_name || row.full_name }}</strong></td>
-            <td style="text-align:center;"><strong>{{ row.kpi }}%</strong></td>
-            <td style="text-align:center;">
-              <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
-            </td>
-            <td>
-              <div style="width:100%;background:#e2e8f0;height:8px;border-radius:4px;overflow:hidden;margin-top:4px;">
-                 <div [style.width]="row.kpi + '%'" [style.background]="getKpiColor(row.kpi)" style="height:100%;"></div>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="table-container" *ngIf="showSummary && summaryData.length > 0">
+      <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:50px; text-align:center;">Hạng</th>
+              <th>Họ và tên</th>
+              <th style="text-align:center; width:100px;">KPI</th>
+              <th style="text-align:center; width:80px;">Loại</th>
+              <th>Tiến độ công việc</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of pagedSummary; let i = index">
+              <td style="text-align:center;">
+                <div style="font-weight:800;color:var(--color-muted);" [style.color]="((currentPage - 1) * pageSize + i) < 3 ? 'var(--color-accent)' : ''">
+                    {{ (currentPage - 1) * pageSize + i + 1 }}
+                </div>
+              </td>
+              <td><strong>{{ row.user_name || row.full_name }}</strong></td>
+              <td style="text-align:center;"><strong>{{ row.kpi }}%</strong></td>
+              <td style="text-align:center;">
+                <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
+              </td>
+              <td>
+                <div style="width:100%;background:#e2e8f0;height:8px;border-radius:4px;overflow:hidden;margin-top:4px;">
+                   <div [style.width]="row.kpi + '%'" [style.background]="getKpiColor(row.kpi)" style="height:100%;"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Custom Pagination -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
+        <div style="font-size:13px; color:var(--color-muted);">
+          Đang xem {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, summaryData.length) }}
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+           <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
+              <option [value]="5">5</option>
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+           </select>
+           <div style="display:flex; gap:4px;">
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+           </div>
+        </div>
+      </div>
     </div>
   </div>
   </ng-container>

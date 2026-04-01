@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -19,7 +20,7 @@ interface KpiData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
@@ -31,15 +32,31 @@ export class DashboardComponent implements OnInit {
   myKpi: KpiData | null = null;
   summaryData: any[] = [];
   loading = false;
+  Math = Math;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 5;
 
   get showSummary() { 
     return this.auth.hasRole('admin', 'vu_truong', 'vu_pho'); 
   }
 
+  // Pagination Getters
+  get pagedSummary() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.summaryData.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.summaryData.length / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
   ngOnInit() {
     this.api.get<any>('kpi-periods').subscribe(res => {
       this.periods = res.data || [];
-      const active = this.periods.find(p => p.is_active);
+      const active = this.periods.find(p => p.is_active || p.name.includes('4/2026')); // Ưu tiên kỳ hiện tại
       if (active) {
         this.selectedPeriodId = active.id;
       } else if (this.periods.length > 0) {
@@ -68,6 +85,7 @@ export class DashboardComponent implements OnInit {
     if (this.showSummary) {
       this.api.get<any>('dashboard/leaderboard', params).subscribe(res => {
         this.summaryData = res.data || [];
+        this.currentPage = 1;
       });
     }
   }
