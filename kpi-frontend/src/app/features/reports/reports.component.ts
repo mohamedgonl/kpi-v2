@@ -163,7 +163,14 @@ export class ReportsComponent implements OnInit {
         backgroundColor: '#ffffff', // Nền trắng sạch đẹp
         width: element.scrollWidth, // Lấy toàn bộ chiều rộng dù có bị cuộn
         height: element.scrollHeight,
-        windowWidth: element.scrollWidth
+        windowWidth: element.scrollWidth,
+        onclone: (clonedDoc) => {
+          // Bật hiển thị Header chỉ khi xuất ảnh
+          const header = clonedDoc.getElementById('chart-header-stamp');
+          if (header) {
+            header.style.display = 'block';
+          }
+        }
       });
       
       const link = document.createElement('a');
