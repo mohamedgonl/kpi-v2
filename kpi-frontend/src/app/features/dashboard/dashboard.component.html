@@ -38,17 +38,18 @@
 </div>
 
 <div class="page-content">
-  <!-- Loading Spinner -->
-  <div class="card" *ngIf="loading">
+  <div class="card" *ngIf="loadingPersonal && !myKpi">
     <div class="spinner-container">
       <div class="spinner"></div>
-      <p>Đang tải dữ liệu tổng quan...</p>
+      <p>Đang tải kết quả cá nhân...</p>
     </div>
   </div>
 
-  <ng-container *ngIf="!loading">
-    <!-- My KPI Summary Card -->
-    <div class="card" *ngIf="myKpi">
+  <!-- My KPI Summary Card -->
+  <div class="card" *ngIf="myKpi" style="position:relative;">
+    <div class="loading-overlay" *ngIf="loadingPersonal">
+      <div class="loading-spinner-small"></div>
+    </div>
     <div class="card-header">
       <div class="card-title">Kết quả cá nhân: {{ myKpi.user_name || myKpi.full_name }}</div>
     </div>
@@ -76,12 +77,15 @@
     </div>
   </div>
 
-  <div *ngIf="!myKpi && !loading" class="card" style="text-align:center;padding:40px;color:var(--color-muted);">
+  <div *ngIf="!myKpi && !loadingPersonal" class="card" style="text-align:center;padding:40px;color:var(--color-muted);">
     Chưa có dữ liệu KPI cho bạn trong thời gian này.
   </div>
 
   <!-- Admin Leaderboard -->
-  <div class="card" *ngIf="showSummary && summaryData.length > 0">
+  <div class="card" *ngIf="showSummary" style="position:relative; min-height: 200px;">
+    <div class="loading-overlay" *ngIf="loadingLeaderboard">
+      <div class="loading-spinner-small"></div>
+    </div>
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
       <div>
         <div class="card-title">Bảng xếp hạng đơn vị</div>
@@ -89,24 +93,52 @@
       </div>
       <div class="search-box">
         <i class="pi pi-search"></i>
-        <input type="text" class="search-input-field" placeholder="Tìm tên cán bộ, chức vụ..." [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+        <input type="text" class="search-input-field" placeholder="Tìm kiếm" [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
       </div>
     </div>
 
-    <div class="table-container" *ngIf="showSummary && summaryData.length > 0">
+    <div class="table-container" *ngIf="showSummary">
       <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width:50px; text-align:center;">Hạng</th>
-              <th>Họ và tên</th>
-              <th style="text-align:center; width:80px;">Tổng CV</th>
-              <th style="text-align:center; width:80px;">Hoàn thành</th>
-              <th style="text-align:center; width:70px;">a (SL%)</th>
-              <th style="text-align:center; width:70px;">b (CL%)</th>
-              <th style="text-align:center; width:70px;">c (TĐ%)</th>
-              <th style="text-align:center; width:80px; background:#f1f5f9;">KPI</th>
-              <th style="text-align:center; width:60px;">Loại</th>
+              <th rowspan="2" style="width:12rem; text-align:center; white-space:nowrap;">Hạng</th>
+              <th style="cursor:pointer; white-space:nowrap;" (click)="onSort('full_name')">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  Họ và tên <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'full_name', 'pi-sort-amount-down': sortBy === 'full_name' && !sortDesc, 'pi-sort-amount-up': sortBy === 'full_name' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('total_tasks')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  Tổng công việc <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_tasks', 'pi-sort-amount-down': sortBy === 'total_tasks' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_tasks' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('completed_tasks')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  Hoàn thành <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'completed_tasks', 'pi-sort-amount-down': sortBy === 'completed_tasks' && !sortDesc, 'pi-sort-amount-up': sortBy === 'completed_tasks' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('a')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  a (Số lượng %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('b')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  b (Chất lượng %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('c')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  c (Tiến độ %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; background:#f1f5f9; cursor:pointer; white-space:nowrap;" (click)="onSort('kpi')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  KPI <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'kpi', 'pi-sort-amount-down': sortBy === 'kpi' && !sortDesc, 'pi-sort-amount-up': sortBy === 'kpi' && sortDesc}"></i>
+                </div>
+              </th>
+              <th rowspan="2" style="text-align:center; width:12rem; white-space:nowrap;">Loại</th>
             </tr>
           </thead>
           <tbody>
@@ -127,6 +159,12 @@
                 <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
               </td>
             </tr>
+            <tr *ngIf="summaryData.length === 0 && !loadingLeaderboard">
+              <td colspan="9" style="text-align:center; padding:40px; color:var(--color-muted);">
+                <i class="pi pi-users" style="font-size:2rem; display:block; margin-bottom:12px; opacity:0.3;"></i>
+                Không có dữ liệu thỏa mãn điều kiện lọc.
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -134,21 +172,25 @@
       <!-- Custom Pagination -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
         <div style="font-size:13px; color:var(--color-muted);">
-          Đang xem {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, summaryData.length) }}
+          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalRecords) }} trong tổng số {{ totalRecords }}
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-           <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
-              <option [value]="5">5</option>
-              <option [value]="10">10</option>
-              <option [value]="20">20</option>
-           </select>
+        <div style="display:flex; gap:16px; align-items:center;">
+           <div style="display:flex; align-items:center; gap:8px;">
+             <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
+             <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1; loadLeaderboard()">
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+             </select>
+           </div>
            <div style="display:flex; gap:4px;">
-              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
-              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1; loadLeaderboard()"><i class="pi pi-chevron-left"></i></button>
+              <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p; loadLeaderboard()">{{ p }}</button>
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1; loadLeaderboard()"><i class="pi pi-chevron-right"></i></button>
            </div>
         </div>
       </div>
     </div>
   </div>
-  </ng-container>
 </div>

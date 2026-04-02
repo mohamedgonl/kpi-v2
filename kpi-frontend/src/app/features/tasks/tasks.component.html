@@ -12,19 +12,19 @@
       </select>
 
       <ng-container *ngIf="timeMode === 'month'">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
           <option *ngFor="let m of months" [value]="m">Tháng {{ m }}</option>
         </select>
       </ng-container>
 
       <ng-container *ngIf="timeMode === 'quarter'">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
           <option *ngFor="let q of quarters" [value]="q">Quý {{ q }}</option>
         </select>
       </ng-container>
 
       <ng-container *ngIf="['month', 'quarter', 'year'].includes(timeMode)">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
           <option *ngFor="let y of years" [value]="y">Năm {{ y }}</option>
         </select>
       </ng-container>
@@ -51,8 +51,8 @@
       <div style="display:flex; gap:16px; align-items:center; flex:1; justify-content:flex-end;">
         <div class="search-box">
           <i class="pi pi-search"></i>
-          <input type="text" class="search-input-field" placeholder="Tìm kiếm... (Ấn Enter để tìm)" 
-                 [(ngModel)]="searchText" (keyup.enter)="onSearchEnter()">
+          <input type="text" class="search-input-field" placeholder="Tìm kiếm công việc, sản phẩm..." 
+                 [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
         </div>
 
         <button class="btn btn-primary btn-sm" (click)="addNew()">
@@ -61,26 +61,37 @@
       </div>
     </div>
 
-    <div *ngIf="tasks.length === 0 && !loading" style="text-align:center;padding:60px;color:var(--color-muted);">
-      <i class="pi pi-briefcase" style="font-size:2.5rem;margin-bottom:12px;display:block;opacity:0.3;"></i>
-      Chưa có công việc nào được ghi nhận trong thời gian này.
-    </div>
-
     <div class="daily-table-wrap" style="margin-top:10px;">
       <table class="daily-table" id="dailyTaskTable">
         <thead>
           <tr>
             <th rowspan="3" class="col-stt">STT</th>
-            <th rowspan="3" class="col-content">Nội dung nhiệm vụ</th>
-            <th colspan="5" class="col-group-header assign-header">GIAO NHIỆM VỤ</th>
-            <th colspan="7" class="col-group-header eval-header">ĐÁNH GIÁ</th>
+            <th rowspan="3" class="col-content" style="cursor:pointer;" (click)="onSort('task_name')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                Nội dung nhiệm vụ <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'task_name', 'pi-sort-amount-down': sortBy === 'task_name' && !sortDesc, 'pi-sort-amount-up': sortBy === 'task_name' && sortDesc}"></i>
+              </div>
+            </th>
+            <th colspan="5" class="col-group-header assign-header" style="background:#eff6ff; color:#1e40af;">GIAO NHIỆM VỤ</th>
+            <th colspan="7" class="col-group-header eval-header" style="background:#ecfdf5; color:#065f46;">ĐÁNH GIÁ</th>
             <th rowspan="3" style="width:80px; position:sticky; right:0; background:#f1f5f9; z-index:20;">Thao tác</th>
           </tr>
           <tr>
-            <th rowspan="2" class="col-deadline">Ngày hết hạn</th>
-            <th rowspan="2" class="col-product">Sản phẩm công việc</th>
+            <th rowspan="2" class="col-deadline" style="cursor:pointer;" (click)="onSort('deadline')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                Ngày hết hạn <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'deadline', 'pi-sort-amount-down': sortBy === 'deadline' && !sortDesc, 'pi-sort-amount-up': sortBy === 'deadline' && sortDesc}"></i>
+              </div>
+            </th>
+            <th rowspan="2" class="col-product" style="cursor:pointer;" (click)="onSort('product')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                Sản phẩm công việc <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'product', 'pi-sort-amount-down': sortBy === 'product' && !sortDesc, 'pi-sort-amount-up': sortBy === 'product' && sortDesc}"></i>
+              </div>
+            </th>
             <th rowspan="2" class="col-coeff">Hệ số quy đổi</th>
-            <th rowspan="2" class="col-assigned">Số lượng giao</th>
+            <th rowspan="2" class="col-assigned" style="cursor:pointer;" (click)="onSort('assigned_qty')">
+              <div style="display:flex; align-items:center; gap:4px; justify-content:center;">
+                Số lượng giao <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'assigned_qty', 'pi-sort-amount-down': sortBy === 'assigned_qty' && !sortDesc, 'pi-sort-amount-up': sortBy === 'assigned_qty' && sortDesc}"></i>
+              </div>
+            </th>
             <th rowspan="2" class="col-assigned-conv">Số lượng giao quy đổi</th>
             <th colspan="2" class="col-qty-header">Đánh giá số lượng</th>
             <th colspan="3" class="col-progress-header">Đánh giá tiến độ</th>
@@ -95,7 +106,7 @@
             <th class="col-rework">Số lần làm lại</th>
             <th class="col-quality-conv">SL đạt chất lượng QĐ</th>
           </tr>
-          <tr class="col-numbers-row">
+          <tr class="col-numbers-row" style="background:#f8fafc; font-size:10px; font-weight:600; color:var(--color-muted);">
             <td>(1)</td>
             <td>(2)</td>
             <td>(3)</td>
@@ -107,13 +118,19 @@
             <td>(9)=(5)×(8)</td>
             <td>(10)</td>
             <td>(11)=(10)-(3)</td>
-            <td>(12)</td>
+            <td>(12)=(9)×75% (nếu trễ)</td>
             <td>(13)</td>
-            <td>(14)</td>
+            <td>(14)=(9)×75% (nếu làm lại)</td>
             <td style="position:sticky; right:0; background:#f8fafc; z-index:20;">-</td>
           </tr>
         </thead>
         <tbody id="dailyTableBody">
+          <tr *ngIf="tasks.length === 0 && !loading">
+            <td colspan="15" class="empty-row" style="text-align:center; padding:60px; color:var(--color-muted);">
+              <i class="pi pi-briefcase" style="font-size:2.5rem; margin-bottom:12px; display:block; opacity:0.3;"></i>
+              Chưa có công việc nào được ghi nhận trong thời gian này.
+            </td>
+          </tr>
           <tr *ngFor="let t of pagedTasks; let i = index">
             <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
             <td class="col-content">
@@ -149,21 +166,21 @@
     <!-- Custom Pagination -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
       <div style="font-size:13px; color:var(--color-muted);">
-        Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, tasks.length) }} trong tổng số {{ tasks.length }} công việc
+        Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalRecords) }} trong tổng số {{ totalRecords }} công việc
       </div>
       <div style="display:flex; gap:16px; align-items:center;">
          <div style="display:flex; align-items:center; gap:8px;">
            <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
-           <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
+           <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1; load()">
               <option [value]="10">10</option>
               <option [value]="20">20</option>
               <option [value]="50">50</option>
            </select>
          </div>
          <div style="display:flex; gap:4px;">
-            <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
-            <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
-            <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+            <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1; load()"><i class="pi pi-chevron-left"></i></button>
+            <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p; load()">{{ p }}</button>
+            <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1; load()"><i class="pi pi-chevron-right"></i></button>
          </div>
       </div>
     </div>
@@ -174,8 +191,9 @@
 <p-dialog [header]="editingTask ? 'Cập nhật công việc' : 'Thêm công việc mới'" 
           [(visible)]="showForm" 
           [modal]="true" 
-          [style]="{width: '600px'}" 
-          [draggable]="false" [resizable]="false">
+          [style]="{width: '750px'}" 
+          [draggable]="false" [resizable]="false"
+          appendTo="body">
   
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
     <div class="form-body" style="overflow-y: auto; padding-right: 8px;">
@@ -192,14 +210,15 @@
                     [filter]="true"
                     placeholder="-- Chọn loại công việc --"
                     [style]="{'width':'100%'}"
-                    scrollHeight="250px">
+                    scrollHeight="250px"
+                    appendTo="body">
           <ng-template let-group pTemplate="group">
-            <div class="flex align-items-center">
-              <span style="font-weight: 700; color: var(--color-primary);">{{ group.label }}</span>
+            <div style="padding: 4px 0;" *ngIf="group.label">
+              <span style="font-weight: 800; color: var(--color-primary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em;">{{ group.label }}</span>
             </div>
           </ng-template>
           <ng-template let-item pTemplate="item">
-            <div style="white-space: normal; line-height: 1.4; padding: 4px 0;">
+            <div style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden; line-height: 1.4; padding: 4px 0;" [title]="item.label">
               {{ item.label }}
             </div>
           </ng-template>
@@ -252,11 +271,13 @@
                       [filter]="true"
                       placeholder="-- Chọn lãnh đạo (nếu có) --"
                       [showClear]="true"
-                      [style]="{'width':'100%'}">
+                      [style]="{'width':'100%'}"
+                      scrollHeight="250px"
+                      appendTo="body">
             <ng-template let-l pTemplate="item">
-              <div>
-                <div style="font-weight:600;">{{ l.full_name }}</div>
-                <div style="font-size:11px; color:var(--color-muted);">{{ l.position }}</div>
+              <div style="padding: 4px 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" [title]="l.full_name + ' - ' + (l.position || '')">
+                <div style="font-weight: 600; color: var(--color-primary);">{{ l.full_name }}</div>
+                <div style="font-size: 11.5px; color: var(--color-muted); margin-top: 2px;">{{ l.position || 'Lãnh đạo đơn vị' }}</div>
               </div>
             </ng-template>
           </p-dropdown>
@@ -265,21 +286,16 @@
 
       <div class="form-group">
         <label class="form-label">Ghi chú thêm</label>
-        <textarea formControlName="note" class="form-input" style="height:80px;"></textarea>
+        <textarea formControlName="note" class="form-input" style="height:80px;" placeholder="Nhập ghi chú chi tiết (nếu có)..."></textarea>
       </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Ghi chú thêm</label>
-      <textarea formControlName="note" class="form-input" style="height:80px;"></textarea>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px; padding-bottom: 20px; background: #fff; position: sticky; bottom: -1.5rem; z-index: 10;">
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px; padding-bottom: 20px; background: #fff; position: sticky; bottom: -1rem; z-index: 10;">
       <button type="button" class="btn btn-outline" (click)="showForm = false">Bỏ qua</button>
       <button type="submit" class="btn btn-primary" [disabled]="loading">
         <i class="pi pi-save" *ngIf="!loading"></i>
         <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
-        {{ editingTask ? 'Cập nhật công việc' : 'Thêm công việc mới' }}
+        {{ editingTask ? 'Cập nhật công việc' : 'Thêm công việc' }}
       </button>
     </div>
   </form>

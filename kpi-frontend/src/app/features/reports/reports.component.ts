@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ChartModule } from 'primeng/chart';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-reports',
@@ -17,6 +18,7 @@ export class ReportsComponent implements OnInit {
 
   periods: any[] = [];
   reportData: any[] = [];
+  allReportData: any[] = [];
   startDate: string = '';
   endDate: string = '';
   
@@ -29,7 +31,8 @@ export class ReportsComponent implements OnInit {
   months = Array.from({ length: 12 }, (_, i) => i + 1);
   quarters = [1, 2, 3, 4];
 
-  loading = false;
+  loadingTable = false;
+  loadingChart = false;
   Math = Math;
   now = new Date();
   // Pagination
@@ -40,11 +43,24 @@ export class ReportsComponent implements OnInit {
   chartData: any;
   chartOptions: any;
 
+  searchText = '';
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
+
   ngOnInit() {
     const currentYear = new Date().getFullYear();
-    for (let y = 2024; y <= currentYear + 1; y++) this.years.push(y);
+    for (let y = currentYear - 20; y <= currentYear + 20; y++) this.years.push(y);
     
     this.updateDates();
+
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(val => {
+      this.searchText = val;
+      this.currentPage = 1;
+      this.loadTableData();
+    });
 
     this.chartOptions = {
       maintainAspectRatio: false,
@@ -75,6 +91,14 @@ export class ReportsComponent implements OnInit {
     this.updateDates();
   }
 
+  ngOnDestroy() {
+    this.searchSubscription?.unsubscribe();
+  }
+
+  onSearchChange(val: string) {
+    this.searchSubject.next(val);
+  }
+
   updateDates() {
     const now = new Date();
     let start = new Date();
@@ -99,41 +123,98 @@ export class ReportsComponent implements OnInit {
         end = new Date(this.selectedYear, 12, 0, 23, 59, 59);
         break;
       case 'range':
-        return this.loadReport();
+        this.loadTableData();
+        this.loadChartData();
+        return;
     }
 
     this.startDate = start.toISOString().substring(0, 10);
     this.endDate = end.toISOString().substring(0, 10);
-    this.loadReport();
+    this.loadTableData();
+    this.loadChartData();
   }
 
-  loadReport() {
-    this.loading = true;
-    const params: any = {};
-    if (this.startDate) params['start_date'] = this.startDate;
-    if (this.endDate) params['end_date'] = this.endDate;
-    this.api.get<any>('dashboard/leaderboard', params).subscribe(res => {
-      this.reportData = res.data || [];
-      this.updateChart();
-      this.currentPage = 1;
-      this.loading = false;
+  loadTableData() {
+    this.loadingTable = true;
+    const params: any = {
+      start_date: this.startDate,
+      end_date: this.endDate,
+      page: this.currentPage,
+      limit: this.pageSize
+    };
+    if (this.searchText) params['search'] = this.searchText;
+    if (this.sortBy) params['sortBy'] = this.sortBy;
+    if (this.sortDesc) params['sortDesc'] = this.sortDesc;
+    if (this.filters.full_name) params['filters[full_name]'] = this.filters.full_name;
+    if (this.filters.position) params['filters[position]'] = this.filters.position;
+
+    this.api.get<any>('dashboard/leaderboard', params).subscribe({
+      next: (res) => {
+        if (res.data && res.data.items) {
+          this.reportData = res.data.items;
+          this.totalRecords = res.data.total;
+        } else {
+          this.reportData = res.data || [];
+          this.totalRecords = this.reportData.length;
+        }
+        this.loadingTable = false;
+      },
+      error: () => this.loadingTable = false
     });
+  }
+
+  loadChartData() {
+    this.loadingChart = true;
+    const allParams = { start_date: this.startDate, end_date: this.endDate, limit: '1000' };
+    this.api.get<any>('dashboard/leaderboard', allParams).subscribe({
+      next: (res) => {
+        this.allReportData = (res.data && res.data.items) ? res.data.items : (res.data || []);
+        this.updateChart();
+        this.loadingChart = false;
+      },
+      error: () => this.loadingChart = false
+    });
+  }
+
+  sortBy = '';
+  sortDesc = false;
+  filters: any = {};
+  totalRecords = 0;
+
+  onFilterChange(field: string, val: string) {
+    this.filters[field] = val;
+    this.currentPage = 1;
+    this.loadTableData();
+  }
+
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.loadTableData();
   }
 
   // Pagination Getters
   get pagedData() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.reportData.slice(start, start + this.pageSize);
+    return this.reportData;
   }
 
   get pageNumbers() {
-    const total = Math.ceil(this.reportData.length / this.pageSize);
+    const total = Math.ceil(this.totalRecords / this.pageSize);
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
   updateChart() {
-    const labels = this.reportData.map(d => d.user_name || d.full_name || 'NV');
-    const values = this.reportData.map(d => d.kpi);
+    if (!this.allReportData || this.allReportData.length === 0) {
+      this.chartData = null;
+      return;
+    }
+    const labels = this.allReportData.map(d => d.user_name || d.full_name || 'NV');
+    const values = this.allReportData.map(d => Number(d.kpi || 0));
 
     this.chartData = {
       labels: labels,
@@ -141,7 +222,7 @@ export class ReportsComponent implements OnInit {
         {
           label: 'Điểm KPI (%)',
           data: values,
-          backgroundColor: this.reportData.map(d => this.getBarColor(d.kpi)),
+          backgroundColor: this.allReportData.map(d => this.getBarColor(Number(d.kpi || 0))),
           borderRadius: 4
         }
       ]
@@ -200,7 +281,7 @@ export class ReportsComponent implements OnInit {
     if (!element) return;
 
     try {
-      this.loading = true;
+      this.loadingChart = true;
       this.now = new Date(); // Làm mới thời gian chụp ảnh v29.3
       const canvas = await html2canvas(element, {
         scale: 3, // Siêu sắc nét (High Quality)
@@ -224,17 +305,17 @@ export class ReportsComponent implements OnInit {
       link.download = `Bieu_do_KPI_${time}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
-      this.loading = false;
+      this.loadingChart = false;
     } catch (err) {
       console.error('Lỗi khi xuất ảnh:', err);
-      this.loading = false;
+      this.loadingChart = false;
     }
   }
 
-  get totalUnitCol7() { return this.reportData.reduce((s, r) => s + Number(r.total_col7 || 0), 0); }
-  get totalUnitCol9() { return this.reportData.reduce((s, r) => s + Number(r.total_col9 || 0), 0); }
-  get totalUnitCol12() { return this.reportData.reduce((s, r) => s + Number(r.total_col12 || 0), 0); }
-  get totalUnitCol14() { return this.reportData.reduce((s, r) => s + Number(r.total_col14 || 0), 0); }
+  get totalUnitCol7() { return this.allReportData.reduce((s, r) => s + Number(r.total_col7 || 0), 0); }
+  get totalUnitCol9() { return this.allReportData.reduce((s, r) => s + Number(r.total_col9 || 0), 0); }
+  get totalUnitCol12() { return this.allReportData.reduce((s, r) => s + Number(r.total_col12 || 0), 0); }
+  get totalUnitCol14() { return this.allReportData.reduce((s, r) => s + Number(r.total_col14 || 0), 0); }
 
   get unitA() { const c7 = this.totalUnitCol7; return c7 > 0 ? (this.totalUnitCol9 / c7) * 100 : 0; }
   get unitB() { const c7 = this.totalUnitCol7; return c7 > 0 ? (this.totalUnitCol14 / c7) * 100 : 0; }

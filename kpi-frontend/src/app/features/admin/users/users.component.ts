@@ -43,9 +43,9 @@ export class UsersComponent implements OnInit, OnDestroy {
     { label: 'Chuyên viên', value: 'chuyen_vien' }
   ];
 
-  get filteredUsers() {
-    return this.users;
-  }
+  currentPage = 1;
+  pageSize = 10;
+  Math = Math;
 
   ngOnInit() {
     this.load();
@@ -66,10 +66,69 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.searchSubject.next(val);
   }
 
+  sortBy = 'full_name';
+  sortDesc = false;
+  totalRecords = 0;
+  filters: any = {};
+
   load() {
-    const params: any = {};
+    const params: any = {
+      page: this.currentPage,
+      limit: this.pageSize,
+      sortBy: this.sortBy,
+      sortDesc: this.sortDesc
+    };
     if (this.searchText) params['search'] = this.searchText;
-    this.api.get<any>('users', params).subscribe(res => { this.users = res.data || []; });
+    
+    // Add individual column filters
+    if (this.filters.full_name) params['filters[full_name]'] = this.filters.full_name;
+    if (this.filters.email) params['filters[email]'] = this.filters.email;
+    if (this.filters.employee_code) params['filters[employee_code]'] = this.filters.employee_code;
+    if (this.filters.position) params['filters[position]'] = this.filters.position;
+    if (this.filters.role) params['filters[role]'] = this.filters.role;
+
+    this.api.get<any>('users', params).subscribe(res => { 
+      // check if it's the new nested format or old fallback array
+      if (res.data && res.data.items) {
+        this.users = res.data.items || [];
+        this.totalRecords = res.data.total || 0;
+      } else {
+        this.users = res.data || [];
+        this.totalRecords = this.users.length;
+      }
+    });
+  }
+
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.load();
+  }
+
+  onFilterChange(field: string, val: string) {
+    this.filters[field] = val;
+    this.currentPage = 1;
+    this.load();
+  }
+
+  get pagedUsers() {
+    // Already paged from server, but fallback to local if needed
+    if (this.totalRecords > this.pageSize && this.users.length === this.pageSize) {
+      return this.users;
+    }
+    // Fallback if pagination wasn't applied on server
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.users.slice(0, this.pageSize); 
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.totalRecords / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
 
   addNew() {

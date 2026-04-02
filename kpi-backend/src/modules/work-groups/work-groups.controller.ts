@@ -10,8 +10,8 @@ export class WorkGroupsController {
   constructor(private readonly workGroupsService: WorkGroupsService) {}
 
   @Get()
-  findAll(@Query('search') search: string) {
-    return this.workGroupsService.findAll(search);
+  findAll(@Query() query: any) {
+    return this.workGroupsService.findAll(query);
   }
 
   @UseGuards(RolesGuard)

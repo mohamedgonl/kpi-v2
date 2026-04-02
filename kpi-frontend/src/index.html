@@ -5,9 +5,58 @@
   <title>Hệ thống quản lý hiệu suất</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/x-icon" href="blog_kpi_2.webp">
 </head>
 <body>
   <app-root></app-root>
+  <script>
+    // Unified Table Resizer Logic
+    document.addEventListener('mousedown', function (e) {
+      if (e.target.classList.contains('resizer')) {
+        const th = e.target.parentElement;
+        const startX = e.pageX;
+        const startWidth = th.offsetWidth;
+        
+        e.target.classList.add('resizing');
+        
+        function onMouseMove(e) {
+          const newWidth = Math.max(40, startWidth + (e.pageX - startX));
+          th.style.width = newWidth + 'px';
+          th.style.minWidth = newWidth + 'px';
+          th.style.maxWidth = newWidth + 'px'; // Ensure it forces the table wider if needed
+        }
+        
+        function onMouseUp() {
+          e.target.classList.remove('resizing');
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      }
+    });
+
+    // Auto-inject resizers to any table that appears
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) {
+            const tables = node.matches?.('.data-table, .daily-table') ? [node] : node.querySelectorAll?.('.data-table, .daily-table') || [];
+            tables.forEach(table => {
+              table.querySelectorAll('th').forEach(th => {
+                if (!th.querySelector('.resizer')) {
+                  const resizer = document.createElement('div');
+                  resizer.className = 'resizer';
+                  th.appendChild(resizer);
+                }
+              });
+            });
+          }
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  </script>
 </body>
 </html>

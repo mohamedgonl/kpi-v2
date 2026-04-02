@@ -7,6 +7,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MessageService } from 'primeng/api';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-tasks',
@@ -35,6 +37,8 @@ export class TasksComponent implements OnInit {
 
   // Search & Filtering
   searchText = '';
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
   
   timeMode: 'date' | 'month' | 'quarter' | 'year' | 'range' | 'custom' = 'month';
   selectedYear = new Date().getFullYear();
@@ -46,6 +50,24 @@ export class TasksComponent implements OnInit {
   tasks: any[] = [];
   currentPage = 1;
   pageSize = 10;
+  totalRecords = 0;
+  sortBy = 'deadline';
+  sortDesc = false;
+
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.load();
+  }
+
+  onSearchChange(val: string) {
+    this.searchSubject.next(val);
+  }
 
   form = this.fb.group({
     work_type_id: ['', Validators.required],
@@ -69,42 +91,57 @@ export class TasksComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.api.get<any>('users/leaders').subscribe(res => { this.leaders = res.data || []; });
-    this.api.get<any>('work-groups').subscribe(res => { this.workGroups = res.data || []; });
-    this.api.get<any>('work-types').subscribe(res => { this.workTypes = res.data || []; });
+    this.api.get<any>('users/leaders').subscribe(res => { 
+      this.leaders = res?.data?.items || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])); 
+    });
+    this.api.get<any>('work-groups', { limit: '1000' }).subscribe(res => { 
+      this.workGroups = res?.data?.items || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])); 
+    });
+    this.api.get<any>('work-types', { limit: '1000' }).subscribe(res => { 
+      this.workTypes = res?.data?.items || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])); 
+    });
     
     const currentYear = new Date().getFullYear();
-    for (let y = 2024; y <= currentYear + 1; y++) this.years.push(y);
+    for (let y = currentYear - 20; y <= currentYear + 20; y++) this.years.push(y);
     
     this.updateDates();
+
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(val => {
+      this.searchText = val;
+      this.currentPage = 1;
+      this.load();
+    });
+
+    this.auth.currentUser$.subscribe(user => {
+      if (user) {
+        this.load();
+      }
+    });
   }
 
-  onSearchEnter() {
-    this.currentPage = 1;
-    this.load();
+  ngOnDestroy() {
+    this.searchSubscription?.unsubscribe();
   }
 
   get groupedWorkTypes() {
+    if (!Array.isArray(this.workGroups)) return [];
+    const wt = Array.isArray(this.workTypes) ? this.workTypes : [];
+    // PrimeNG expects: { label: 'Group', items: [ {label: 'Item', value: 1} ] }
     return this.workGroups.map(g => ({
       label: g.name,
-      value: g.id,
-      items: this.workTypes
-        .filter(t => t.group_id === g.id)
+      items: wt
+        .filter(t => t.group_id == g.id)
         .map(t => ({ label: t.name, value: t.id }))
-    }));
+    })).filter(g => g.items.length > 0);
   }
 
-  get filteredTasks() { return this.tasks; }
-
-  get pagedTasks() {
-    // Note: Since search is server-side, tasks is already filtered.
-    // Client-side paging on already fetched tasks.
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredTasks.slice(start, start + this.pageSize);
-  }
+  get pagedTasks() { return this.tasks; }
 
   get pageNumbers() {
-    const total = Math.ceil(this.filteredTasks.length / this.pageSize);
+    const total = Math.ceil(this.totalRecords / this.pageSize);
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
@@ -136,13 +173,23 @@ export class TasksComponent implements OnInit {
     this.loading = true;
     const params: any = {
       start_date: this.startDate,
-      end_date: this.endDate
+      end_date: this.endDate,
+      page: this.currentPage,
+      limit: this.pageSize,
+      sortBy: this.sortBy,
+      sortDesc: this.sortDesc
     };
     if (this.searchText) params.search = this.searchText;
 
     this.api.get<any>('tasks', params).subscribe({
       next: (res) => {
-        this.tasks = res.data || [];
+        if (res.data && res.data.items) {
+          this.tasks = res.data.items;
+          this.totalRecords = res.data.total;
+        } else {
+          this.tasks = res.data || [];
+          this.totalRecords = this.tasks.length;
+        }
         this.loading = false;
       },
       error: (err) => {

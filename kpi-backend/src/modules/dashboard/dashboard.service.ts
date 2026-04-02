@@ -33,8 +33,9 @@ export class DashboardService {
     return res.rows.map(row => this.calculateKPIFromRawData(row));
   }
 
-  async getSummaryDashboard(startDate?: string, endDate?: string, search?: string) {
-    const params: any[] = [startDate || null, endDate || null];
+  async getSummaryDashboard(queryObj: any) {
+    const { start_date, end_date, search, page = 1, limit = 100, sortBy, sortDesc } = queryObj || {};
+    const params: any[] = [start_date || null, end_date || null];
     let query = `
       SELECT 
         u.id as user_id,
@@ -58,25 +59,51 @@ export class DashboardService {
 
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND (u.full_name ILIKE $${params.length} OR u.position ILIKE $${params.length})`;
+      query += ` AND u.full_name ILIKE $${params.length}`;
+    }
+
+    if (queryObj['filters[full_name]']) {
+      params.push(`%${queryObj['filters[full_name]']}%`);
+      query += ` AND u.full_name ILIKE $${params.length}`;
+    }
+    if (queryObj['filters[position]']) {
+      params.push(`%${queryObj['filters[position]']}%`);
+      query += ` AND u.position ILIKE $${params.length}`;
     }
 
     query += ` GROUP BY u.id, u.full_name, u.position`;
     
-    console.log(`[DashboardService] Fetching summary. Range: ${startDate} to ${endDate}, Search: ${search}`);
     const res = await this.db.query(query, params);
-    console.log(`[DashboardService] Found ${res.rows.length} users in summary.`);
-    return res.rows.map(row => this.calculateKPIFromRawData(row));
+    let rows = res.rows.map((row: any) => this.calculateKPIFromRawData(row));
+
+    // Sort in memory
+    if (sortBy) {
+      rows.sort((a,b) => {
+        let valA = a[sortBy];
+        let valB = b[sortBy];
+        if (sortBy === 'full_name') {
+           valA = (a.user_name || a.full_name || '').toLowerCase();
+           valB = (b.user_name || b.full_name || '').toLowerCase();
+        }
+        if (valA < valB) return sortDesc === 'true' || sortDesc === true ? 1 : -1;
+        if (valA > valB) return sortDesc === 'true' || sortDesc === true ? -1 : 1;
+        return 0;
+      });
+    }
+
+    const total = rows.length;
+    const startIndex = (Number(page) - 1) * Number(limit);
+    let items = rows.slice(startIndex, startIndex + Number(limit));
+
+    return { items, total };
   }
 
-  async getLeaderboard(startDate?: string, endDate?: string, search?: string) {
-    console.log(`[DashboardService] getLeaderboard called`);
-    const summary = await this.getSummaryDashboard(startDate, endDate, search);
-    
-    // Sort by KPI descending
-    const sorted = summary.sort((s1, s2) => s2.kpi - s1.kpi);
-    console.log(`[DashboardService] Leaderboard sorted. Top user: ${sorted[0]?.full_name}`);
-    return sorted;
+  async getLeaderboard(queryObj: any) {
+    if (!queryObj.sortBy) {
+       queryObj.sortBy = 'kpi';
+       queryObj.sortDesc = true;
+    }
+    return this.getSummaryDashboard(queryObj);
   }
 
   private calculateKPIFromRawData(row: any) {

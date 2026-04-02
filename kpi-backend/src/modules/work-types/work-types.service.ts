@@ -5,28 +5,47 @@ import { DatabaseService } from '../../database/database.service';
 export class WorkTypesService {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAll(groupId?: string, search?: string) {
+  async findAll(queryObj: any) {
+    const { group_id, search, page = 1, limit = 100, sortBy = 'sort_order', sortDesc = 'false' } = queryObj || {};
+
     let query = `
-      SELECT id, group_id, name, coefficient, excel_group, sort_order 
-      FROM work_types 
-      WHERE is_active = TRUE
+      SELECT t.id, t.group_id, t.name, t.coefficient, t.excel_group, t.sort_order, g.name as group_name
+      FROM work_types t
+      LEFT JOIN work_groups g ON t.group_id = g.id
+      WHERE t.is_active = TRUE
     `;
     const params: any[] = [];
     
-    if (groupId) {
-      params.push(groupId);
-      query += ` AND group_id = $${params.length}`;
+    if (group_id) {
+      params.push(group_id);
+      query += ` AND t.group_id = $${params.length}`;
     }
 
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND name ILIKE $${params.length}`;
+      query += ` AND (t.name ILIKE $${params.length} OR g.name ILIKE $${params.length})`;
     }
-    
-    query += ` ORDER BY sort_order ASC`;
+
+    if (queryObj['filters[name]']) { params.push(`%${queryObj['filters[name]']}%`); query += ` AND t.name ILIKE $${params.length}`; }
+    if (queryObj['filters[coefficient]']) { params.push(queryObj['filters[coefficient]']); query += ` AND t.coefficient = $${params.length}`; }
+    if (queryObj['filters[group_id]']) { params.push(queryObj['filters[group_id]']); query += ` AND t.group_id = $${params.length}`; }
+
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) AS sub`;
+    const countRes = await this.db.query(countQuery, params);
+    const total = parseInt(countRes.rows[0].total, 10);
+
+    const validSortFields = ['sort_order', 'name', 'coefficient', 'group_name'];
+    const orderField = validSortFields.includes(sortBy) ? (sortBy === 'group_name' ? 'g.name' : `t.${sortBy}`) : 't.sort_order';
+    const orderDir = sortDesc === 'true' ? 'DESC' : 'ASC';
+
+    query += ` ORDER BY ${orderField} ${orderDir}`;
+
+    const offset = (page - 1) * limit;
+    params.push(limit, offset);
+    query += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
     
     const res = await this.db.query(query, params);
-    return res.rows;
+    return { items: res.rows, total };
   }
 
   async create(createDto: any) {

@@ -47,7 +47,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private searchSubscription?: Subscription;
   
   summaryData: any[] = [];
-  loading = false;
+  loadingPersonal = false;
+  loadingLeaderboard = false;
   Math = Math;
 
   // Pagination
@@ -58,24 +59,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.auth.hasRole('admin', 'vu_truong', 'vu_pho'); 
   }
 
-  get filteredSummary() {
+  sortBy = 'kpi';
+  sortDesc = true;
+  totalRecords = 0;
+  filters: any = {};
+
+  get pagedSummary() {
     return this.summaryData;
   }
 
-  get pagedSummary() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredSummary.slice(start, start + this.pageSize);
+  get pageNumbers() {
+    const total = Math.ceil(this.totalRecords / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
 
-  get pageNumbers() {
-    // Note: Since search is server-side, filteredSummary is already the result of the search
-    const total = Math.ceil(this.filteredSummary.length / this.pageSize);
-    return Array.from({ length: total }, (_, i) => i + 1);
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.loadData();
+  }
+
+  onFilterChange(field: string, val: string) {
+    this.filters[field] = val;
+    this.currentPage = 1;
+    this.loadData();
   }
 
   ngOnInit() {
     const currentYear = new Date().getFullYear();
-    for (let y = 2024; y <= currentYear + 1; y++) this.years.push(y);
+    for (let y = currentYear - 20; y <= currentYear + 20; y++) this.years.push(y);
     
     this.updateDates();
     
@@ -91,7 +108,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).subscribe(val => {
       this.searchText = val;
       this.currentPage = 1;
-      this.loadData();
+      this.loadLeaderboard();
     });
   }
 
@@ -140,33 +157,53 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadData() {
-    this.loading = true;
-    const params: any = {};
-    if (this.startDate) params['start_date'] = this.startDate;
-    if (this.endDate) params['end_date'] = this.endDate;
-    if (this.searchText) params['search'] = this.searchText;
+    this.loadPersonal();
+    if (this.showSummary) {
+      this.loadLeaderboard();
+    }
+  }
 
-    this.api.get<any>('dashboard/personal', { start_date: params.start_date, end_date: params.end_date }).subscribe({
+  loadPersonal() {
+    this.loadingPersonal = true;
+    this.api.get<any>('dashboard/personal', { start_date: this.startDate, end_date: this.endDate }).subscribe({
       next: (res) => {
         const data = res.data || [];
         this.myKpi = data.length > 0 ? data[0] : null;
-        this.loading = false;
+        this.loadingPersonal = false;
       },
       error: (err) => {
-        this.loading = false;
+        this.loadingPersonal = false;
       }
     });
+  }
 
-    if (this.showSummary) {
-      this.api.get<any>('dashboard/leaderboard', params).subscribe({
-        next: (res) => {
-          this.summaryData = res.data || [];
-          this.currentPage = 1;
-        },
-        error: (err) => {
+  loadLeaderboard() {
+    this.loadingLeaderboard = true;
+    const params: any = {
+      start_date: this.startDate,
+      end_date: this.endDate,
+      page: this.currentPage,
+      limit: this.pageSize
+    };
+    if (this.searchText) params.search = this.searchText;
+    if (this.sortBy) params.sortBy = this.sortBy;
+    if (this.sortDesc) params.sortDesc = this.sortDesc;
+
+    this.api.get<any>('dashboard/leaderboard', params).subscribe({
+      next: (res) => {
+        if (res.data && res.data.items) {
+           this.summaryData = res.data.items || [];
+           this.totalRecords = res.data.total || 0;
+        } else {
+           this.summaryData = res.data || [];
+           this.totalRecords = this.summaryData.length;
         }
-      });
-    }
+        this.loadingLeaderboard = false;
+      },
+      error: (err) => {
+        this.loadingLeaderboard = false;
+      }
+    });
   }
 
   grade(kpi: number): string {

@@ -5,17 +5,19 @@ import { DatabaseService } from '../../database/database.service';
 export class TasksService {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAll(userId?: string, startDate?: string, endDate?: string, search?: string) {
+  async findAll(userId?: string, queryObj: any = {}) {
+    const { start_date, end_date, search, page = 1, limit = 20, sortBy = 'deadline', sortDesc = 'false' } = queryObj;
+
     let query = `SELECT * FROM v_task_details WHERE 1=1`;
     const params: any[] = [];
     
-    if (startDate) {
-      params.push(startDate);
+    if (start_date) {
+      params.push(start_date);
       query += ` AND deadline >= $${params.length}`;
     }
     
-    if (endDate) {
-      params.push(endDate);
+    if (end_date) {
+      params.push(end_date);
       query += ` AND deadline <= $${params.length}`;
     }
     
@@ -27,14 +29,35 @@ export class TasksService {
     if (search) {
       params.push(`%${search}%`);
       query += ` AND (task_name ILIKE $${params.length} 
-                 OR product ILIKE $${params.length} 
-                 OR note ILIKE $${params.length} 
-                 OR lead_by_name ILIKE $${params.length})`;
+                 OR product ILIKE $${params.length})`;
     }
-    
-    query += ` ORDER BY created_at DESC`;
+
+    if (queryObj['filters[task_name]']) {
+      params.push(`%${queryObj['filters[task_name]']}%`);
+      query += ` AND task_name ILIKE $${params.length}`;
+    }
+
+    if (queryObj['filters[product]']) {
+      params.push(`%${queryObj['filters[product]']}%`);
+      query += ` AND product ILIKE $${params.length}`;
+    }
+
+    // Count before pagination
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) AS sub`;
+    const countRes = await this.db.query(countQuery, params);
+    const total = parseInt(countRes.rows[0].total, 10);
+
+    const validSortFields = ['deadline', 'task_name', 'status', 'assigned_qty', 'actual_qty', 'created_at'];
+    const orderField = validSortFields.includes(sortBy) ? sortBy : 'deadline';
+    const orderDir = sortDesc === 'true' ? 'DESC' : 'ASC';
+    query += ` ORDER BY ${orderField} ${orderDir}`;
+
+    const offset = (Number(page) - 1) * Number(limit);
+    params.push(Number(limit), offset);
+    query += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
     const res = await this.db.query(query, params);
-    return res.rows;
+    return { items: res.rows, total };
   }
 
   async create(userId: string, createDto: any) {

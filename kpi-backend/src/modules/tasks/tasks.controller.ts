@@ -14,14 +14,11 @@ export class TasksController {
 
   @Get()
   findAll(
-    @Query('start_date') startDate: string,
-    @Query('end_date') endDate: string,
-    @Query('user_id') queryUserId: string,
-    @Query('search') search: string,
+    @Query() query: any,
     @CurrentUser() user: any
   ) {
-    const targetUserId = (user.role === 'chuyen_vien') ? user.id : (queryUserId || user.id);
-    return this.tasksService.findAll(targetUserId, startDate, endDate, search);
+    const targetUserId = (user.role === 'chuyen_vien') ? user.id : (query.user_id || user.id);
+    return this.tasksService.findAll(targetUserId, query);
   }
 
   @Post()

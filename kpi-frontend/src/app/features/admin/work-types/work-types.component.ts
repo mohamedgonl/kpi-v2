@@ -36,7 +36,8 @@ export class WorkTypesComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.api.get<any>('work-groups').subscribe(res => { 
-      this.workGroups = (res.data || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)); 
+      const items = res.data?.items ? res.data.items : (res.data || []);
+      this.workGroups = items.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)); 
     });
     this.loadTypes();
 
@@ -58,15 +59,73 @@ export class WorkTypesComponent implements OnInit, OnDestroy {
   }
 
   loadTypes() {
-    const params: any = {};
+    const params: any = {
+      page: this.currentPage,
+      limit: this.pageSize,
+      sortBy: this.sortBy,
+      sortDesc: this.sortDesc
+    };
     if (this.searchText) params['search'] = this.searchText;
+    
+    if (this.filters.name) params['filters[name]'] = this.filters.name;
+    if (this.filters.group_id) params['filters[group_id]'] = this.filters.group_id;
+    if (this.filters.coefficient) params['filters[coefficient]'] = this.filters.coefficient;
+
     this.api.get<any>('work-types', params).subscribe(res => { 
-      this.workTypes = res.data || []; 
+      if (res.data && res.data.items) {
+        this.workTypes = res.data.items || [];
+        this.totalRecords = res.data.total || 0;
+      } else {
+        this.workTypes = res.data || []; 
+        this.totalRecords = this.workTypes.length;
+      }
     });
   }
 
-  getTypesForGroup(gId: string) {
-    return this.workTypes.filter(t => t.group_id === gId);
+  currentPage = 1;
+  pageSize = 10;
+  Math = Math;
+  
+  sortBy = 'sort_order';
+  sortDesc = false;
+  totalRecords = 0;
+  filters: any = {};
+
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.loadTypes();
+  }
+
+  onFilterChange(field: string, val: string) {
+    this.filters[field] = val;
+    this.currentPage = 1;
+    this.loadTypes();
+  }
+
+  get pagedWorkTypes() {
+    if (this.workTypes.length <= this.pageSize && this.totalRecords >= this.workTypes.length) return this.workTypes;
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.workTypes.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.totalRecords / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  getGroupInfo(gId: string) {
+    return this.workGroups.find(g => g.id === gId);
+  }
+
+  getGroupName(gId: string) {
+    const g = this.getGroupInfo(gId);
+    return g ? `${g.code} - ${g.name}` : 'Không rõ';
   }
 
   addNew(groupId: string = '') {

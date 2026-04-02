@@ -10,8 +10,8 @@ export class WorkTypesController {
   constructor(private readonly workTypesService: WorkTypesService) {}
 
   @Get()
-  findAll(@Query('group_id') groupId: string, @Query('search') search: string) {
-    return this.workTypesService.findAll(groupId, search);
+  findAll(@Query() query: any) {
+    return this.workTypesService.findAll(query);
   }
 
   @UseGuards(RolesGuard)

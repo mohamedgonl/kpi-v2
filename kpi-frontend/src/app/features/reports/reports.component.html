@@ -12,19 +12,19 @@
       </select>
 
       <ng-container *ngIf="timeMode === 'month'">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
           <option *ngFor="let m of months" [value]="m">Tháng {{ m }}</option>
         </select>
       </ng-container>
 
       <ng-container *ngIf="timeMode === 'quarter'">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
           <option *ngFor="let q of quarters" [value]="q">Quý {{ q }}</option>
         </select>
       </ng-container>
 
       <ng-container *ngIf="['month', 'quarter', 'year'].includes(timeMode)">
-        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
           <option *ngFor="let y of years" [value]="y">Năm {{ y }}</option>
         </select>
       </ng-container>
@@ -39,129 +39,165 @@
 </div>
 
 <div class="page-content">
-  <!-- Loading Spinner -->
-  <div class="card" *ngIf="loading">
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <p>Đang tải dữ liệu báo cáo...</p>
+  <!-- Chart Section -->
+  <div class="card" *ngIf="allReportData.length > 0" style="position:relative;">
+    <div class="loading-overlay" *ngIf="loadingChart">
+      <div class="loading-spinner-small"></div>
+    </div>
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="card-title"><i class="pi pi-chart-bar" style="margin-right:8px;color:var(--color-accent)"></i>Biểu đồ KPI nhân sự</div>
+      <button class="btn btn-outline btn-sm" (click)="exportImage()" [disabled]="allReportData.length === 0" style="background:#fff;">
+        <i class="pi pi-image" style="color:#ec4899"></i> Xuất ảnh
+      </button>
+    </div>
+    <div id="report-chart-container" style="overflow-x: auto; padding-bottom: 10px;">
+      <div id="report-chart-inner" [style.minWidth.px]="Math.max(800, allReportData.length * 50)" style="padding: 30px 30px 80px 30px; background: white; font-family: var(--font-primary);">
+        <!-- Phần này chỉ hiện khi xuất ảnh, ẩn trên Web -->
+        <div id="chart-header-stamp" style="display:none; text-align:center; margin-bottom:25px;">
+           <h2 style="margin:0; color:#1e293b; font-size:22px; text-transform: uppercase;">Biểu đồ Tổng hợp KPI Nhân sự</h2>
+           <div style="margin-top:8px; font-size:14px; color:#64748b;">
+              Kỳ đánh giá: <span style="color:#2563eb">{{ getSelectedPeriodName() }}</span> 
+              <span style="margin: 0 10px; color:#cbd5e1;">|</span>
+              Ngày xuất: {{ now | date:'dd/MM/yyyy HH:mm' }}
+           </div>
+        </div>
+        <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="350px"></p-chart>
+      </div>
     </div>
   </div>
 
-  <ng-container *ngIf="!loading">
-    <!-- Chart Section -->
-    <div class="card" *ngIf="reportData.length > 0">
-      <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="card-title"><i class="pi pi-chart-bar" style="margin-right:8px;color:var(--color-accent)"></i>Biểu đồ KPI nhân sự</div>
-        <button class="btn btn-outline btn-sm" (click)="exportImage()" [disabled]="reportData.length === 0" style="background:#fff;">
-          <i class="pi pi-image" style="color:#ec4899"></i> Xuất ảnh
-        </button>
+  <!-- Table Section -->
+  <div class="card" id="report-table-card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div class="card-title">Bảng tổng hợp kết quả</div>
+        <div class="card-subtitle">Hiển thị danh sách nhân sự và điểm số KPI chi tiết</div>
       </div>
-      <div id="report-chart-container" style="overflow-x: auto; padding-bottom: 10px;">
-        <div id="report-chart-inner" [style.minWidth.px]="Math.max(800, reportData.length * 50)" style="padding: 30px 30px 80px 30px; background: white; font-family: var(--font-primary);">
-          <!-- Phần này chỉ hiện khi xuất ảnh, ẩn trên Web -->
-          <div id="chart-header-stamp" style="display:none; text-align:center; margin-bottom:25px;">
-             <h2 style="margin:0; color:#1e293b; font-size:22px; text-transform: uppercase;">Biểu đồ Tổng hợp KPI Nhân sự</h2>
-             <div style="margin-top:8px; font-size:14px; color:#64748b;">
-                Kỳ đánh giá: <span style="color:#2563eb">{{ getSelectedPeriodName() }}</span> 
-                <span style="margin: 0 10px; color:#cbd5e1;">|</span>
-                Ngày xuất: {{ now | date:'dd/MM/yyyy HH:mm' }}
-             </div>
-          </div>
-          <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="350px"></p-chart>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table Section -->
-    <div class="card" id="report-table-card">
-      <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div class="card-title">Bảng tổng hợp kết quả</div>
-          <div class="card-subtitle">Hiển thị danh sách nhân sự và điểm số KPI chi tiết</div>
+      <div style="display:flex; gap: 8px; align-items:center;">
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input type="text" class="search-input-field" placeholder="Tìm kiếm" [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
         </div>
         <button class="btn btn-outline btn-sm" (click)="exportExcel()" [disabled]="reportData.length === 0" style="background:#fff;">
           <i class="pi pi-file-excel" style="color:#16a34a"></i> Xuất Excel
         </button>
       </div>
+    </div>
 
-      <div *ngIf="reportData.length === 0" style="text-align:center;padding:60px;color:var(--color-muted);background:#f8fafc;border-radius:var(--radius-md);">
-        <i class="pi pi-inbox" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
-        Không có dữ liệu cho thời gian này
+    <div class="table-container" style="position:relative; min-height: 200px;">
+      <div class="loading-overlay" *ngIf="loadingTable">
+        <div class="loading-spinner-small"></div>
+      </div>
+      
+      <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
+        <table class="data-table" style="min-width: 1000px; border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center; position:sticky; left:0; background:var(--color-bg-alt); z-index:10; border-bottom: 2px solid var(--color-border); white-space:nowrap;">STT</th>
+              <th style="min-width:180px; position:sticky; left:40px; background:var(--color-bg-alt); z-index:10; border-right:1px solid var(--color-border); cursor:pointer; white-space:nowrap;" (click)="onSort('full_name')">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  Họ tên <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'full_name', 'pi-sort-amount-down': sortBy === 'full_name' && !sortDesc, 'pi-sort-amount-up': sortBy === 'full_name' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="width:150px; cursor:pointer; white-space:nowrap;" (click)="onSort('position')">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  Chức vụ <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'position', 'pi-sort-amount-down': sortBy === 'position' && !sortDesc, 'pi-sort-amount-up': sortBy === 'position' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_col7')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  Số lượng Giao (7) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_col7', 'pi-sort-amount-down': sortBy === 'total_col7' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_col7' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_col9')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  Số lượng Thực (9) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_col9', 'pi-sort-amount-down': sortBy === 'total_col9' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_col9' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('a')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  a% (Số lượng) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('b')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  b% (Chất lượng) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('c')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  c% (Tiến độ) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:100px; background:#f1f5f9; cursor:pointer; white-space:nowrap;" (click)="onSort('kpi')">
+                <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                  KPI <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'kpi', 'pi-sort-amount-down': sortBy === 'kpi' && !sortDesc, 'pi-sort-amount-up': sortBy === 'kpi' && sortDesc}"></i>
+                </div>
+              </th>
+              <th style="text-align:center; width:80px; white-space:nowrap;">Loại</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of pagedData; let i = index">
+              <td style="text-align:center; color:var(--color-muted); position:sticky; left:0; background:#ffffff; z-index:9;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+              <td style="position:sticky; left:40px; background:#ffffff; z-index:9; border-right:1px solid var(--color-border);">
+                <strong>{{ row.user_name || row.full_name }}</strong>
+              </td>
+              <td style="color:var(--color-muted);">{{ row.position || '—' }}</td>
+              <td style="text-align:center">{{ row.total_col7 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ row.total_col9 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ row.a | number:'1.1-1' }}%</td>
+              <td style="text-align:center">{{ row.b | number:'1.1-1' }}%</td>
+              <td style="text-align:center">{{ row.c | number:'1.1-1' }}%</td>
+              <td style="text-align:center;background:#fffaf0;font-size:14px;"><strong>{{ row.kpi | number:'1.1-1' }}%</strong></td>
+              <td style="text-align:center">
+                <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
+              </td>
+            </tr>
+            <!-- Footer Row for Totals -->
+            <tr style="background:#f8fafc; font-weight:700; color:var(--color-primary)" *ngIf="allReportData.length > 0">
+              <td colspan="3" style="text-align:right; position:sticky; left:0; background:#f8fafc; z-index:9; border-right:1px solid var(--color-border);">TỔNG CỘNG ĐƠN VỊ:</td>
+              <td style="text-align:center">{{ totalUnitCol7 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ totalUnitCol9 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ unitA | number:'1.1-1' }}%</td>
+              <td style="text-align:center">{{ unitB | number:'1.1-1' }}%</td>
+              <td style="text-align:center">{{ unitC | number:'1.1-1' }}%</td>
+              <td style="text-align:center; background:#fffaf0;"><strong>{{ unitKPI | number:'1.1-1' }}%</strong></td>
+              <td style="text-align:center">
+                <span class="grade-badge" [class]="gradeClass(unitKPI)">{{ grade(unitKPI) }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="reportData.length === 0 && !loadingTable">
+              <td colspan="10" style="text-align:center; padding:60px; color:var(--color-muted);">
+                 <i class="pi pi-inbox" style="font-size:2rem; margin-bottom:12px; display:block; opacity:0.3;"></i>
+                 Không có dữ liệu cho thời gian này
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="table-container" *ngIf="reportData.length > 0">
-        <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
-          <table class="data-table" style="min-width: 1000px; border-collapse: separate; border-spacing: 0;">
-            <thead>
-              <tr>
-                <th style="width:40px; text-align:center; position:sticky; left:0; background:var(--color-bg-alt); z-index:10;">STT</th>
-                <th style="min-width:180px; position:sticky; left:40px; background:var(--color-bg-alt); z-index:10; border-right:1px solid var(--color-border);">Họ tên</th>
-                <th style="width:150px;">Chức vụ</th>
-                <th style="text-align:center; width:90px;">SL Giao (7)</th>
-                <th style="text-align:center; width:90px;">SL Thực (9)</th>
-                <th style="text-align:center; width:90px;">a% (SL)</th>
-                <th style="text-align:center; width:90px;">b% (CL)</th>
-                <th style="text-align:center; width:90px;">c% (TD)</th>
-                <th style="text-align:center; width:100px; background:#f1f5f9;">KPI</th>
-                <th style="text-align:center; width:80px;">Loại</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of pagedData; let i = index">
-                <td style="text-align:center; color:var(--color-muted); position:sticky; left:0; background:#ffffff; z-index:9;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                <td style="position:sticky; left:40px; background:#ffffff; z-index:9; border-right:1px solid var(--color-border);">
-                  <strong>{{ row.user_name || row.full_name }}</strong>
-                </td>
-                <td style="color:var(--color-muted);">{{ row.position || '—' }}</td>
-                <td style="text-align:center">{{ row.total_col7 | number:'1.1-1' }}</td>
-                <td style="text-align:center">{{ row.total_col9 | number:'1.1-1' }}</td>
-                <td style="text-align:center">{{ row.a | number:'1.1-1' }}%</td>
-                <td style="text-align:center">{{ row.b | number:'1.1-1' }}%</td>
-                <td style="text-align:center">{{ row.c | number:'1.1-1' }}%</td>
-                <td style="text-align:center;background:#fffaf0;font-size:14px;"><strong>{{ row.kpi | number:'1.1-1' }}%</strong></td>
-                <td style="text-align:center">
-                  <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
-                </td>
-              </tr>
-              <!-- Footer Row for Totals -->
-              <tr style="background:#f8fafc; font-weight:700; color:var(--color-primary)">
-                <td colspan="3" style="text-align:right; position:sticky; left:0; background:#f8fafc; z-index:9; border-right:1px solid var(--color-border);">TỔNG CỘNG ĐƠN VỊ:</td>
-                <td style="text-align:center">{{ totalUnitCol7 | number:'1.1-1' }}</td>
-                <td style="text-align:center">{{ totalUnitCol9 | number:'1.1-1' }}</td>
-                <td style="text-align:center">{{ unitA | number:'1.1-1' }}%</td>
-                <td style="text-align:center">{{ unitB | number:'1.1-1' }}%</td>
-                <td style="text-align:center">{{ unitC | number:'1.1-1' }}%</td>
-                <td style="text-align:center; background:#fffaf0;"><strong>{{ unitKPI | number:'1.1-1' }}%</strong></td>
-                <td style="text-align:center">
-                  <span class="grade-badge" [class]="gradeClass(unitKPI)">{{ grade(unitKPI) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Custom Pagination -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
+        <div style="font-size:13px; color:var(--color-muted);">
+          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalRecords) }} trong tổng số {{ totalRecords }} cán bộ
         </div>
-
-        <!-- Custom Pagination -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
-          <div style="font-size:13px; color:var(--color-muted);">
-            Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, reportData.length) }} trong tổng số {{ reportData.length }} cán bộ
-          </div>
-          <div style="display:flex; gap:16px; align-items:center;">
-             <div style="display:flex; align-items:center; gap:8px;">
-               <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
-               <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
-                  <option [value]="10">10</option>
-                  <option [value]="20">20</option>
-                  <option [value]="50">50</option>
-               </select>
-             </div>
-             <div style="display:flex; gap:4px;">
-                <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
-                <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
-                <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
-             </div>
-          </div>
+        <div style="display:flex; gap:16px; align-items:center;">
+           <div style="display:flex; align-items:center; gap:8px;">
+             <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
+             <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1; loadTableData()">
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+             </select>
+           </div>
+           <div style="display:flex; gap:4px;">
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1; loadTableData()"><i class="pi pi-chevron-left"></i></button>
+              <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p; loadTableData()">{{ p }}</button>
+              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1; loadTableData()"><i class="pi pi-chevron-right"></i></button>
+           </div>
         </div>
       </div>
     </div>
-  </ng-container>
+  </div>
 </div>

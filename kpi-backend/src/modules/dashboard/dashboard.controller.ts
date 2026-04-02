@@ -18,14 +18,14 @@ export class DashboardController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'vu_truong', 'vu_pho')
   @Get('summary')
-  getSummary(@Query('start_date') startDate: string, @Query('end_date') endDate: string, @Query('search') search: string) {
-    return this.dashboardService.getSummaryDashboard(startDate, endDate, search);
+  getSummary(@Query() query: any) {
+    return this.dashboardService.getSummaryDashboard(query);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin', 'vu_truong', 'vu_pho')
   @Get('leaderboard')
-  getLeaderboard(@Query('start_date') startDate: string, @Query('end_date') endDate: string, @Query('search') search: string) {
-    return this.dashboardService.getLeaderboard(startDate, endDate, search);
+  getLeaderboard(@Query() query: any) {
+    return this.dashboardService.getLeaderboard(query);
   }
 }

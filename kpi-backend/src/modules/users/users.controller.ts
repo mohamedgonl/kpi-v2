@@ -11,8 +11,8 @@ export class UsersController {
 
   @Roles('admin')
   @Get()
-  findAll(@Query('search') search: string) {
-    return this.usersService.findAll(search);
+  findAll(@Query() query: any) {
+    return this.usersService.findAll(query);
   }
 
   @Get('leaders')

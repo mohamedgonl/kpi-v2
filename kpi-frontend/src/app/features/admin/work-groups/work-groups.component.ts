@@ -34,8 +34,24 @@ export class WorkGroupsComponent implements OnInit, OnDestroy {
     sort_order: [0],
   });
 
-  get filteredWorkGroups() {
-    return this.workGroups;
+  currentPage = 1;
+  pageSize = 10;
+  Math = Math;
+
+  sortBy = 'sort_order';
+  sortDesc = false;
+  totalRecords = 0;
+  filters: any = {};
+
+  get pagedWorkGroups() {
+    if (this.workGroups.length <= this.pageSize && this.totalRecords >= this.workGroups.length) return this.workGroups;
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.workGroups.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers() {
+    const total = Math.ceil(this.totalRecords / this.pageSize);
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
 
   ngOnInit() {
@@ -57,12 +73,45 @@ export class WorkGroupsComponent implements OnInit, OnDestroy {
     this.searchSubject.next(val);
   }
 
+  onSort(field: string) {
+    if (this.sortBy === field) {
+      this.sortDesc = !this.sortDesc;
+    } else {
+      this.sortBy = field;
+      this.sortDesc = false;
+    }
+    this.currentPage = 1;
+    this.load();
+  }
+
+  onFilterChange(field: string, val: string) {
+    this.filters[field] = val;
+    this.currentPage = 1;
+    this.load();
+  }
+
   load() {
-    const params: any = {};
+    const params: any = {
+      page: this.currentPage,
+      limit: this.pageSize,
+      sortBy: this.sortBy,
+      sortDesc: this.sortDesc
+    };
     if (this.searchText) params['search'] = this.searchText;
+    
+    if (this.filters.code) params['filters[code]'] = this.filters.code;
+    if (this.filters.name) params['filters[name]'] = this.filters.name;
+    if (this.filters.description) params['filters[description]'] = this.filters.description;
+
     this.api.get<any>('work-groups', params).subscribe(res => { 
-      this.workGroups = (res.data || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)); 
-    }); 
+      if (res.data && res.data.items) {
+        this.workGroups = res.data.items || [];
+        this.totalRecords = res.data.total || 0;
+      } else {
+        this.workGroups = (res.data || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)); 
+        this.totalRecords = this.workGroups.length;
+      }
+    });
   }
 
   addNew() {

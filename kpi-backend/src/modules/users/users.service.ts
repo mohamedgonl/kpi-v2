@@ -6,7 +6,9 @@ import { DatabaseService } from '../../database/database.service';
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAll(search?: string) {
+  async findAll(queryObj: any) {
+    const { search, page = 1, limit = 10, sortBy = 'full_name', sortDesc = 'false' } = queryObj;
+    
     let query = `SELECT id, employee_code, full_name, email, phone, position, role, avatar_url, is_active, last_login_at 
                  FROM users WHERE is_active = TRUE`;
     const params: any[] = [];
@@ -16,12 +18,33 @@ export class UsersService {
       query += ` AND (full_name ILIKE $${params.length} 
                    OR email ILIKE $${params.length} 
                    OR employee_code ILIKE $${params.length}
-                   OR position ILIKE $${params.length})`;
+                   OR position ILIKE $${params.length}
+                   OR (CASE WHEN role = 'admin' THEN 'Admin' WHEN role = 'vu_truong' THEN 'Vụ trưởng' WHEN role = 'vu_pho' THEN 'Vụ phó' WHEN role = 'chuyen_vien' THEN 'Chuyên viên' ELSE role END) ILIKE $${params.length})`;
     }
 
-    query += ` ORDER BY full_name ASC`;
+    if (queryObj['filters[full_name]']) { params.push(`%${queryObj['filters[full_name]']}%`); query += ` AND full_name ILIKE $${params.length}`; }
+    if (queryObj['filters[email]']) { params.push(`%${queryObj['filters[email]']}%`); query += ` AND email ILIKE $${params.length}`; }
+    if (queryObj['filters[employee_code]']) { params.push(`%${queryObj['filters[employee_code]']}%`); query += ` AND employee_code ILIKE $${params.length}`; }
+    if (queryObj['filters[position]']) { params.push(`%${queryObj['filters[position]']}%`); query += ` AND position ILIKE $${params.length}`; }
+    if (queryObj['filters[role]']) { params.push(queryObj['filters[role]']); query += ` AND role = $${params.length}`; }
+
+    // Count before sorting and pagination
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) AS sub`;
+    const countRes = await this.db.query(countQuery, params);
+    const total = parseInt(countRes.rows[0].total, 10);
+
+    const validSortFields = ['full_name', 'email', 'employee_code', 'position', 'role'];
+    const orderField = validSortFields.includes(sortBy) ? sortBy : 'full_name';
+    const orderDir = sortDesc === 'true' ? 'DESC' : 'ASC';
+    
+    query += ` ORDER BY ${orderField} ${orderDir}`;
+
+    const offset = (page - 1) * limit;
+    params.push(limit, offset);
+    query += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
     const res = await this.db.query(query, params);
-    return res.rows;
+    return { items: res.rows, total };
   }
 
   async findLeaders() {
