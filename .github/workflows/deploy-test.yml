@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: kpi-backend/package-lock.json
 
       - name: Deploy to Vercel
-        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --env SMTP_HOST=${{ vars.SMTP_HOST }} --env SMTP_PORT=${{ vars.SMTP_PORT }} --env SMTP_USER=${{ secrets.SMTP_USER }} --env SMTP_PASS=${{ secrets.SMTP_PASS }} --env SMTP_FROM="${{ vars.SMTP_FROM }}"
+        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --env SMTP_HOST="${{ vars.SMTP_HOST }}" --env SMTP_PORT="${{ vars.SMTP_PORT }}" --env SMTP_USER="${{ secrets.SMTP_USER }}" --env SMTP_PASS="${{ secrets.SMTP_PASS }}" --env SMTP_FROM="${{ vars.SMTP_FROM }}"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
