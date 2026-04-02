@@ -58,7 +58,12 @@ jobs:
         env:
           BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
 
+      - name: Inject Backend API URL for Vercel remote build
+        run: |
+          echo "export const environment = { production: true, apiUrl: '${{ vars.BACKEND_API_URL }}/api', appName: 'Hệ thống Quản lý KPI' };" > src/environments/environment.prod.ts
+
       - name: Deploy to Vercel
+
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
