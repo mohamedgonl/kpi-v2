@@ -14,13 +14,14 @@ export class TasksController {
 
   @Get()
   findAll(
-    @Query('period_id') periodId: string,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
     @Query('user_id') queryUserId: string,
+    @Query('search') search: string,
     @CurrentUser() user: any
   ) {
-    // Regular users can only see their own tasks unless explicitly allowing them via roles
     const targetUserId = (user.role === 'chuyen_vien') ? user.id : (queryUserId || user.id);
-    return this.tasksService.findAll(periodId, targetUserId);
+    return this.tasksService.findAll(targetUserId, startDate, endDate, search);
   }
 
   @Post()

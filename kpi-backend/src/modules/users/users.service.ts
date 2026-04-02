@@ -6,10 +6,30 @@ import { DatabaseService } from '../../database/database.service';
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAll() {
+  async findAll(search?: string) {
+    let query = `SELECT id, employee_code, full_name, email, phone, position, role, avatar_url, is_active, last_login_at 
+                 FROM users WHERE is_active = TRUE`;
+    const params: any[] = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (full_name ILIKE $${params.length} 
+                   OR email ILIKE $${params.length} 
+                   OR employee_code ILIKE $${params.length}
+                   OR position ILIKE $${params.length})`;
+    }
+
+    query += ` ORDER BY full_name ASC`;
+    const res = await this.db.query(query, params);
+    return res.rows;
+  }
+
+  async findLeaders() {
     const res = await this.db.query(
-      `SELECT id, employee_code, full_name, email, phone, position, role, avatar_url, is_active, last_login_at 
-       FROM users WHERE is_active = TRUE ORDER BY created_at DESC`
+      `SELECT id, full_name, position, role 
+       FROM users 
+       WHERE is_active = TRUE AND role IN ('vu_truong', 'vu_pho') 
+       ORDER BY full_name ASC`
     );
     return res.rows;
   }

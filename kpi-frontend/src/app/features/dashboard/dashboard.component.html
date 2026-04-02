@@ -1,12 +1,39 @@
 <div class="topbar">
   <div class="topbar-title">Bảng điều khiển</div>
   <div class="topbar-actions">
-    <select class="form-input" style="width:auto;padding:6px 12px;height:36px;" (change)="onPeriodChange($event)">
-      <option value="">-- Chọn kỳ --</option>
-      <option *ngFor="let p of periods" [value]="p.id" [selected]="p.id === selectedPeriodId">
-        {{ p.name }} {{ p.is_active ? '(Hiện tại)' : '' }}
-      </option>
-    </select>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="timeMode" (change)="onTimeModeChange()">
+        <option value="date">Ngày hiện tại</option>
+        <option value="month">Theo tháng</option>
+        <option value="quarter">Theo quý</option>
+        <option value="year">Theo năm</option>
+        <option value="range">Khoảng thời gian</option>
+      </select>
+
+      <ng-container *ngIf="timeMode === 'month'">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
+          <option *ngFor="let m of months" [value]="m">Tháng {{ m }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="timeMode === 'quarter'">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
+          <option *ngFor="let q of quarters" [value]="q">Quý {{ q }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="['month', 'quarter', 'year'].includes(timeMode)">
+        <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
+          <option *ngFor="let y of years" [value]="y">Năm {{ y }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="timeMode === 'range'">
+        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="startDate" (change)="updateDates()">
+        <span style="font-size:12px; font-weight:600;">-</span>
+        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="endDate" (change)="updateDates()">
+      </ng-container>
+    </div>
   </div>
 </div>
 
@@ -50,15 +77,19 @@
   </div>
 
   <div *ngIf="!myKpi && !loading" class="card" style="text-align:center;padding:40px;color:var(--color-muted);">
-    Chưa có dữ liệu KPI cho bạn trong kỳ này.
+    Chưa có dữ liệu KPI cho bạn trong thời gian này.
   </div>
 
   <!-- Admin Leaderboard -->
   <div class="card" *ngIf="showSummary && summaryData.length > 0">
-    <div class="card-header">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
       <div>
         <div class="card-title">Bảng xếp hạng đơn vị</div>
         <div class="card-subtitle">Xếp hạng theo điểm KPI từ cao xuống thấp</div>
+      </div>
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" class="search-input-field" placeholder="Tìm tên cán bộ, chức vụ..." [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
       </div>
     </div>
 
@@ -69,9 +100,13 @@
             <tr>
               <th style="width:50px; text-align:center;">Hạng</th>
               <th>Họ và tên</th>
-              <th style="text-align:center; width:100px;">KPI</th>
-              <th style="text-align:center; width:80px;">Loại</th>
-              <th>Tiến độ công việc</th>
+              <th style="text-align:center; width:80px;">Tổng CV</th>
+              <th style="text-align:center; width:80px;">Hoàn thành</th>
+              <th style="text-align:center; width:70px;">a (SL%)</th>
+              <th style="text-align:center; width:70px;">b (CL%)</th>
+              <th style="text-align:center; width:70px;">c (TĐ%)</th>
+              <th style="text-align:center; width:80px; background:#f1f5f9;">KPI</th>
+              <th style="text-align:center; width:60px;">Loại</th>
             </tr>
           </thead>
           <tbody>
@@ -82,14 +117,14 @@
                 </div>
               </td>
               <td><strong>{{ row.user_name || row.full_name }}</strong></td>
-              <td style="text-align:center;"><strong>{{ row.kpi }}%</strong></td>
+              <td style="text-align:center">{{ row.total_tasks || 0 }}</td>
+              <td style="text-align:center">{{ row.completed_tasks || 0 }}</td>
+              <td style="text-align:center; color:var(--color-success)">{{ row.a || 0 }}%</td>
+              <td style="text-align:center; color:var(--color-info)">{{ row.b || 0 }}%</td>
+              <td style="text-align:center; color:var(--color-warning)">{{ row.c || 0 }}%</td>
+              <td style="text-align:center; background:#f8fafc"><strong>{{ row.kpi }}%</strong></td>
               <td style="text-align:center;">
                 <span class="grade-badge" [class]="gradeClass(row.kpi)">{{ grade(row.kpi) }}</span>
-              </td>
-              <td>
-                <div style="width:100%;background:#e2e8f0;height:8px;border-radius:4px;overflow:hidden;margin-top:4px;">
-                   <div [style.width]="row.kpi + '%'" [style.background]="getKpiColor(row.kpi)" style="height:100%;"></div>
-                </div>
               </td>
             </tr>
           </tbody>

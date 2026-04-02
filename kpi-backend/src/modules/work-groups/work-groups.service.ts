@@ -5,11 +5,18 @@ import { DatabaseService } from '../../database/database.service';
 export class WorkGroupsService {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAll() {
-    const res = await this.db.query(
-      `SELECT id, code, name, short_name, color_hex, sort_order 
-       FROM work_groups WHERE is_active = TRUE ORDER BY sort_order ASC`
-    );
+  async findAll(search?: string) {
+    let query = `SELECT id, code, name, short_name, color_hex, sort_order 
+                 FROM work_groups WHERE is_active = TRUE`;
+    const params: any[] = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (name ILIKE $${params.length} OR code ILIKE $${params.length})`;
+    }
+
+    query += ` ORDER BY sort_order ASC`;
+    const res = await this.db.query(query, params);
     return res.rows;
   }
 

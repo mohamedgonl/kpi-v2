@@ -11,21 +11,21 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('personal')
-  getPersonal(@CurrentUser() user: any, @Query('period_id') periodId: string) {
-    return this.dashboardService.getPersonalDashboard(user.id, periodId);
+  getPersonal(@CurrentUser() user: any, @Query('start_date') startDate: string, @Query('end_date') endDate: string) {
+    return this.dashboardService.getPersonalDashboard(user.id, startDate, endDate);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin', 'vu_truong', 'vu_pho')
   @Get('summary')
-  getSummary(@Query('period_id') periodId: string) {
-    return this.dashboardService.getSummaryDashboard(periodId);
+  getSummary(@Query('start_date') startDate: string, @Query('end_date') endDate: string, @Query('search') search: string) {
+    return this.dashboardService.getSummaryDashboard(startDate, endDate, search);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin', 'vu_truong', 'vu_pho')
   @Get('leaderboard')
-  getLeaderboard(@Query('period_id') periodId: string) {
-    return this.dashboardService.getLeaderboard(periodId);
+  getLeaderboard(@Query('start_date') startDate: string, @Query('end_date') endDate: string, @Query('search') search: string) {
+    return this.dashboardService.getLeaderboard(startDate, endDate, search);
   }
 }

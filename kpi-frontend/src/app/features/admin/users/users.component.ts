@@ -1,22 +1,27 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DialogModule],
   templateUrl: './users.component.html'
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
   private messageService = inject(MessageService);
 
   users: any[] = [];
+  searchText = '';
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
+
   showForm = false;
   editingUser: any = null;
   loading = false;
@@ -38,10 +43,33 @@ export class UsersComponent implements OnInit {
     { label: 'Chuyên viên', value: 'chuyen_vien' }
   ];
 
-  ngOnInit() { this.load(); }
+  get filteredUsers() {
+    return this.users;
+  }
+
+  ngOnInit() {
+    this.load();
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(val => {
+      this.searchText = val;
+      this.load();
+    });
+  }
+
+  ngOnDestroy() {
+    this.searchSubscription?.unsubscribe();
+  }
+
+  onSearchChange(val: string) {
+    this.searchSubject.next(val);
+  }
 
   load() {
-    this.api.get<any>('users').subscribe(res => { this.users = res.data || []; });
+    const params: any = {};
+    if (this.searchText) params['search'] = this.searchText;
+    this.api.get<any>('users', params).subscribe(res => { this.users = res.data || []; });
   }
 
   addNew() {
@@ -70,7 +98,6 @@ export class UsersComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
     
-    // Remove empty password if editing
     const val: any = { ...this.form.value };
     if (this.editingUser && !val.password) delete val.password;
 

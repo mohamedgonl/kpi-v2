@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { WorkGroupsService } from './work-groups.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -10,8 +10,8 @@ export class WorkGroupsController {
   constructor(private readonly workGroupsService: WorkGroupsService) {}
 
   @Get()
-  findAll() {
-    return this.workGroupsService.findAll();
+  findAll(@Query('search') search: string) {
+    return this.workGroupsService.findAll(search);
   }
 
   @UseGuards(RolesGuard)

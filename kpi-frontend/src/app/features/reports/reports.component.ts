@@ -17,7 +17,18 @@ export class ReportsComponent implements OnInit {
 
   periods: any[] = [];
   reportData: any[] = [];
-  selectedPeriodId = '';
+  startDate: string = '';
+  endDate: string = '';
+  
+  timeMode: 'date' | 'month' | 'quarter' | 'year' | 'range' = 'month';
+  selectedMonth: number = new Date().getMonth() + 1;
+  selectedQuarter: number = Math.ceil((new Date().getMonth() + 1) / 3);
+  selectedYear: number = new Date().getFullYear();
+  
+  years: number[] = [];
+  months = Array.from({ length: 12 }, (_, i) => i + 1);
+  quarters = [1, 2, 3, 4];
+
   loading = false;
   Math = Math;
   now = new Date();
@@ -30,13 +41,10 @@ export class ReportsComponent implements OnInit {
   chartOptions: any;
 
   ngOnInit() {
-    this.api.get<any>('kpi-periods').subscribe(res => {
-      this.periods = res.data || [];
-      if (this.periods.length) {
-        this.selectedPeriodId = this.periods[0].id;
-        this.loadReport();
-      }
-    });
+    const currentYear = new Date().getFullYear();
+    for (let y = 2024; y <= currentYear + 1; y++) this.years.push(y);
+    
+    this.updateDates();
 
     this.chartOptions = {
       maintainAspectRatio: false,
@@ -63,15 +71,47 @@ export class ReportsComponent implements OnInit {
     };
   }
 
-  onPeriodChange(event: Event) {
-    this.selectedPeriodId = (event.target as HTMLSelectElement).value;
+  onTimeModeChange() {
+    this.updateDates();
+  }
+
+  updateDates() {
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    switch (this.timeMode) {
+      case 'date':
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        break;
+      case 'month':
+        start = new Date(this.selectedYear, this.selectedMonth - 1, 1);
+        end = new Date(this.selectedYear, this.selectedMonth, 0, 23, 59, 59);
+        break;
+      case 'quarter':
+        const startMonth = (this.selectedQuarter - 1) * 3;
+        start = new Date(this.selectedYear, startMonth, 1);
+        end = new Date(this.selectedYear, startMonth + 3, 0, 23, 59, 59);
+        break;
+      case 'year':
+        start = new Date(this.selectedYear, 0, 1);
+        end = new Date(this.selectedYear, 12, 0, 23, 59, 59);
+        break;
+      case 'range':
+        return this.loadReport();
+    }
+
+    this.startDate = start.toISOString().substring(0, 10);
+    this.endDate = end.toISOString().substring(0, 10);
     this.loadReport();
   }
 
   loadReport() {
     this.loading = true;
     const params: any = {};
-    if (this.selectedPeriodId) params['period_id'] = this.selectedPeriodId;
+    if (this.startDate) params['start_date'] = this.startDate;
+    if (this.endDate) params['end_date'] = this.endDate;
     this.api.get<any>('dashboard/leaderboard', params).subscribe(res => {
       this.reportData = res.data || [];
       this.updateChart();
@@ -149,8 +189,9 @@ export class ReportsComponent implements OnInit {
   }
 
   getSelectedPeriodName() {
-    const p = this.periods.find(p => p.id === this.selectedPeriodId);
-    return p ? p.name : '—';
+    const start = new Date(this.startDate).toLocaleDateString('vi-VN');
+    const end = new Date(this.endDate).toLocaleDateString('vi-VN');
+    return `Từ ${start} đến ${end}`;
   }
 
   async exportImage() {

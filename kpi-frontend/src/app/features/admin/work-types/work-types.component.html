@@ -1,19 +1,23 @@
 <div class="topbar">
   <div class="topbar-title">Danh mục Loại công việc</div>
   <div class="topbar-actions">
-    <button class="btn btn-primary btn-sm" (click)="addNew()">
-      <i class="pi pi-plus"></i> Thêm loại công việc
-    </button>
+    <div class="search-box">
+      <i class="pi pi-search"></i>
+      <input type="text" class="search-input-field" placeholder="Tìm tên loại công việc..." [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+    </div>
   </div>
 </div>
 
 <div class="page-content">
   <div *ngFor="let group of workGroups" class="card">
-    <div class="card-header" [style.border-left]="'4px solid ' + group.color_hex" style="padding-left:12px;">
+    <div class="card-header" [style.border-left]="'4px solid ' + group.color_hex" style="padding-left:12px; display:flex; justify-content:space-between; align-items:center;">
       <div>
         <div class="card-title">{{ group.name }}: {{ group.description }}</div>
         <div class="card-subtitle" style="font-size:11px;">Mã nhóm: {{ group.code }}</div>
       </div>
+      <button class="btn btn-primary btn-sm" style="padding:6px 12px; font-size:12px;" (click)="addNew(group.id)">
+        <i class="pi pi-plus"></i> Thêm loại công việc
+      </button>
     </div>
 
     <div class="table-responsive">
@@ -22,7 +26,6 @@
           <tr>
             <th style="width:60px;">STT</th>
             <th>Tên loại công việc</th>
-            <th>Đơn vị tính / Sản phẩm</th>
             <th style="width:100px;text-align:center;">Hệ số</th>
             <th style="width:120px;text-align:right;">Hành động</th>
           </tr>
@@ -31,7 +34,6 @@
           <tr *ngFor="let type of getTypesForGroup(group.id)">
             <td style="color:var(--color-muted);">{{ type.sort_order }}</td>
             <td><strong>{{ type.name }}</strong></td>
-            <td><span class="chip chip-neutral" style="font-weight:normal;">{{ type.product_type || '—' }}</span></td>
             <td style="text-align:center;">
               <span style="font-weight:700;color:var(--color-accent);">{{ type.coefficient | number:'1.1-1' }}</span>
             </td>
@@ -43,7 +45,7 @@
             </td>
           </tr>
           <tr *ngIf="getTypesForGroup(group.id).length === 0">
-            <td colspan="5" style="text-align:center;padding:20px;color:var(--color-muted);font-style:italic;">
+            <td colspan="4" style="text-align:center;padding:20px;color:var(--color-muted);font-style:italic;">
               Chưa có loại công việc nào trong nhóm này
             </td>
           </tr>
@@ -72,11 +74,6 @@
     <div class="form-group">
       <label class="form-label">Tên loại công việc <span class="text-danger">*</span></label>
       <input type="text" formControlName="name" class="form-input" placeholder="Ví dụ: Soạn thảo văn bản">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Đơn vị tính / Sản phẩm</label>
-      <input type="text" formControlName="product_type" class="form-input" placeholder="Ví dụ: Trang A4 / Quyết định">
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">

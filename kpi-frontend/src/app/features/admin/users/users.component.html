@@ -1,16 +1,20 @@
 <div class="topbar">
   <div class="topbar-title">Quản lý Tài khoản</div>
   <div class="topbar-actions">
-    <button class="btn btn-primary btn-sm" (click)="addNew()">
-      <i class="pi pi-user-plus"></i> Thêm tài khoản
-    </button>
   </div>
 </div>
 
 <div class="page-content">
   <div class="card">
-    <div class="card-header">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
       <div class="card-title">Danh sách nhân sự ({{ users.length }})</div>
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" class="search-input-field" placeholder="Tìm tên, email, MSNV, chức vụ..." [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="addNew()">
+        <i class="pi pi-user-plus"></i> Thêm tài khoản
+      </button>
     </div>
 
     <div class="table-responsive" style="overflow-x:auto;">
@@ -27,7 +31,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of users">
+          <tr *ngFor="let u of filteredUsers">
             <td>
               <div class="user-avatar" style="width:30px;height:30px;font-size:11px;">
                 {{ u.full_name?.charAt(0) || 'U' }}

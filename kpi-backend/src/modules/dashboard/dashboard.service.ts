@@ -5,41 +5,78 @@ import { DatabaseService } from '../../database/database.service';
 export class DashboardService {
   constructor(private readonly db: DatabaseService) {}
 
-  async getPersonalDashboard(userId: string, periodId?: string) {
-    let query = `SELECT * FROM v_kpi_raw_totals WHERE user_id = $1`;
-    const params: any[] = [userId];
-
-    if (periodId) {
-      params.push(periodId);
-      query += ` AND period_id = $2`;
-    }
-    
-    query += ` ORDER BY period_id DESC`;
+  async getPersonalDashboard(userId: string, startDate?: string, endDate?: string) {
+    const params: any[] = [userId, startDate || null, endDate || null];
+    const query = `
+      SELECT 
+        u.id as user_id,
+        u.full_name,
+        u.position,
+        COALESCE(SUM(t.assigned_qty * wt.coefficient), 0) as total_col7,
+        COALESCE(SUM(t.actual_qty * wt.coefficient), 0) as total_col9,
+        COALESCE(SUM(GREATEST(0, (t.actual_qty * wt.coefficient) - 
+          (CASE WHEN t.status = 'completed' AND t.completion_date > t.deadline 
+                THEN (t.completion_date::date - t.deadline::date) * 0.25 * t.actual_qty * wt.coefficient 
+                ELSE 0 END))), 0) as total_col12,
+        COALESCE(SUM(GREATEST(0, (t.actual_qty * wt.coefficient) - 
+          (COALESCE(t.rework_count, 0) * 0.25 * t.actual_qty * wt.coefficient))), 0) as total_col14
+      FROM users u
+      LEFT JOIN tasks t ON u.id = t.user_id AND t.is_deleted = FALSE
+        AND ($2::date IS NULL OR t.deadline >= $2::date)
+        AND ($3::date IS NULL OR t.deadline <= $3::date)
+      LEFT JOIN work_types wt ON t.work_type_id = wt.id
+      WHERE u.id = $1
+      GROUP BY u.id, u.full_name, u.position
+    `;
     
     const res = await this.db.query(query, params);
-    
     return res.rows.map(row => this.calculateKPIFromRawData(row));
   }
 
-  async getSummaryDashboard(periodId?: string) {
-    let query = `SELECT * FROM v_kpi_raw_totals WHERE 1=1`;
-    const params: any[] = [];
+  async getSummaryDashboard(startDate?: string, endDate?: string, search?: string) {
+    const params: any[] = [startDate || null, endDate || null];
+    let query = `
+      SELECT 
+        u.id as user_id,
+        u.full_name,
+        u.position,
+        COALESCE(SUM(t.assigned_qty * wt.coefficient), 0) as total_col7,
+        COALESCE(SUM(t.actual_qty * wt.coefficient), 0) as total_col9,
+        COALESCE(SUM(GREATEST(0, (t.actual_qty * wt.coefficient) - 
+          (CASE WHEN t.status = 'completed' AND t.completion_date > t.deadline 
+                THEN (t.completion_date::date - t.deadline::date) * 0.25 * t.actual_qty * wt.coefficient 
+                ELSE 0 END))), 0) as total_col12,
+        COALESCE(SUM(GREATEST(0, (t.actual_qty * wt.coefficient) - 
+          (COALESCE(t.rework_count, 0) * 0.25 * t.actual_qty * wt.coefficient))), 0) as total_col14
+      FROM users u
+      LEFT JOIN tasks t ON u.id = t.user_id AND t.is_deleted = FALSE
+        AND ($1::date IS NULL OR t.deadline >= $1::date)
+        AND ($2::date IS NULL OR t.deadline <= $2::date)
+      LEFT JOIN work_types wt ON t.work_type_id = wt.id
+      WHERE 1=1
+    `;
 
-    if (periodId) {
-      params.push(periodId);
-      query += ` AND period_id = $1`;
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (u.full_name ILIKE $${params.length} OR u.position ILIKE $${params.length})`;
     }
+
+    query += ` GROUP BY u.id, u.full_name, u.position`;
     
+    console.log(`[DashboardService] Fetching summary. Range: ${startDate} to ${endDate}, Search: ${search}`);
     const res = await this.db.query(query, params);
-    
+    console.log(`[DashboardService] Found ${res.rows.length} users in summary.`);
     return res.rows.map(row => this.calculateKPIFromRawData(row));
   }
 
-  async getLeaderboard(periodId?: string) {
-    const summary = await this.getSummaryDashboard(periodId);
+  async getLeaderboard(startDate?: string, endDate?: string, search?: string) {
+    console.log(`[DashboardService] getLeaderboard called`);
+    const summary = await this.getSummaryDashboard(startDate, endDate, search);
     
     // Sort by KPI descending
-    return summary.sort((s1, s2) => s2.kpi - s1.kpi);
+    const sorted = summary.sort((s1, s2) => s2.kpi - s1.kpi);
+    console.log(`[DashboardService] Leaderboard sorted. Top user: ${sorted[0]?.full_name}`);
+    return sorted;
   }
 
   private calculateKPIFromRawData(row: any) {
@@ -55,6 +92,8 @@ export class DashboardService {
 
     return {
       ...row,
+      total_tasks: Number(totalCol7.toFixed(2)),
+      completed_tasks: Number(totalCol9.toFixed(2)),
       a: Number(a.toFixed(2)),
       b: Number(b.toFixed(2)),
       c: Number(c.toFixed(2)),

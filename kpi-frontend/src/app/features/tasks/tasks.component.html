@@ -1,111 +1,173 @@
 <div class="topbar">
   <div class="topbar-title">Quản lý Công việc của tôi</div>
   <div class="topbar-actions">
-    <button class="btn btn-primary btn-sm" (click)="addNew()">
-      <i class="pi pi-plus-circle"></i> Thêm công việc
-    </button>
-    <select class="form-input" style="width:auto;padding:6px 12px;height:36px;" (change)="onPeriodChange($event)">
-      <option value="">-- Chọn kỳ --</option>
-      <option *ngFor="let p of periods" [value]="p.id" [selected]="p.id === selectedPeriodId">
-        {{ p.name }}
-      </option>
-    </select>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <select class="form-input" style="width:130px;padding:6px 10px;height:36px;" [(ngModel)]="timeMode" (change)="onTimeModeChange()">
+        <option value="date">Ngày hiện tại</option>
+        <option value="month">Theo tháng</option>
+        <option value="quarter">Theo quý</option>
+        <option value="year">Theo năm</option>
+        <option value="range">Khoảng thời gian</option>
+      </select>
+
+      <ng-container *ngIf="timeMode === 'month'">
+        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedMonth" (change)="updateDates()">
+          <option *ngFor="let m of months" [value]="m">Tháng {{ m }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="timeMode === 'quarter'">
+        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedQuarter" (change)="updateDates()">
+          <option *ngFor="let q of quarters" [value]="q">Quý {{ q }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="['month', 'quarter', 'year'].includes(timeMode)">
+        <select class="form-input" style="width:100px;padding:6px 10px;height:36px;" [(ngModel)]="selectedYear" (change)="updateDates()">
+          <option *ngFor="let y of years" [value]="y">Năm {{ y }}</option>
+        </select>
+      </ng-container>
+
+      <ng-container *ngIf="timeMode === 'range'">
+        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="startDate" (change)="updateDates()">
+        <span style="font-size:12px; font-weight:600;">-</span>
+        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="endDate" (change)="updateDates()">
+      </ng-container>
+    </div>
   </div>
 </div>
 
 <div class="page-content">
-  <!-- Loading Spinner -->
-  <div class="card" *ngIf="loading">
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <p>Đang tải danh sách công việc...</p>
-    </div>
-  </div>
-
-  <ng-container *ngIf="!loading">
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">Danh sách công việc trong kỳ ({{ tasks.length }})</div>
+  <div class="card" style="position:relative; min-height: 200px;">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner-small"></div>
     </div>
 
-    <div *ngIf="tasks.length === 0" style="text-align:center;padding:60px;color:var(--color-muted);">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+      <div class="card-title">Danh sách công việc ({{ tasks.length }})</div>
+      
+      <div style="display:flex; gap:16px; align-items:center; flex:1; justify-content:flex-end;">
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input type="text" class="search-input-field" placeholder="Tìm kiếm... (Ấn Enter để tìm)" 
+                 [(ngModel)]="searchText" (keyup.enter)="onSearchEnter()">
+        </div>
+
+        <button class="btn btn-primary btn-sm" (click)="addNew()">
+          <i class="pi pi-plus"></i> Thêm công việc
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="tasks.length === 0 && !loading" style="text-align:center;padding:60px;color:var(--color-muted);">
       <i class="pi pi-briefcase" style="font-size:2.5rem;margin-bottom:12px;display:block;opacity:0.3;"></i>
-      Chưa có công việc nào được ghi nhận trong kỳ này.
+      Chưa có công việc nào được ghi nhận trong thời gian này.
     </div>
 
-    <div class="table-container" style="position:relative; margin-top:10px;">
-      <div class="table-responsive" style="overflow-x:auto; width:100%; border:1px solid var(--color-border); border-radius:8px;">
-        <table class="data-table" style="min-width: 1200px; border-collapse: separate; border-spacing: 0;">
-          <thead>
-            <tr>
-              <th style="min-width:300px;">Tên công việc / Nội dung</th>
-              <th style="width:150px;">Nhóm</th>
-              <th style="width:200px;">Loại công việc</th>
-              <th style="text-align:center;width:80px;">SL Giao</th>
-              <th style="text-align:center;width:80px;">SL Thực</th>
-              <th style="width:110px;">Hết hạn</th>
-              <th style="width:120px;text-align:center;">Trạng thái</th>
-              <th style="width:100px; text-align:right; position:sticky; right:0; background:var(--color-bg-alt); z-index:10; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let t of pagedTasks">
-              <td>
-                <div style="font-weight:700;">{{ t.task_name }}</div>
-                <div style="font-size:11px;color:var(--color-muted);" *ngIf="t.reference_code">MS: {{ t.reference_code }}</div>
-              </td>
-              <td>
-                <span style="font-size:12px; opacity:0.8;">{{ t.work_group_name }}</span>
-              </td>
-              <td>
-                 <div style="font-size:12px;">{{ t.work_type_name }}</div>
-                 <div style="font-size:10px;color:var(--color-muted);" *ngIf="t.coefficient">HS: {{ t.coefficient }}</div>
-              </td>
-              <td style="text-align:center;">{{ t.assigned_qty }}</td>
-              <td style="text-align:center;"><strong>{{ t.actual_qty }}</strong></td>
-              <td>
-                <div style="font-size:12px;">{{ t.deadline | date:'dd/MM/yyyy' }}</div>
-              </td>
-              <td style="text-align:center;">
-                <span class="chip" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
-              </td>
-              <td style="text-align:right; position:sticky; right:0; background:#ffffff; z-index:9; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
-                 <div style="display:flex;gap:8px;justify-content:flex-end;">
-                  <button class="btn btn-sm btn-outline" style="padding:6px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
-                  <button class="btn btn-sm btn-outline" style="padding:6px;color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="daily-table-wrap" style="margin-top:10px;">
+      <table class="daily-table" id="dailyTaskTable">
+        <thead>
+          <tr>
+            <th rowspan="3" class="col-stt">STT</th>
+            <th rowspan="3" class="col-content">Nội dung nhiệm vụ</th>
+            <th colspan="5" class="col-group-header assign-header">GIAO NHIỆM VỤ</th>
+            <th colspan="7" class="col-group-header eval-header">ĐÁNH GIÁ</th>
+            <th rowspan="3" style="width:80px; position:sticky; right:0; background:#f1f5f9; z-index:20;">Thao tác</th>
+          </tr>
+          <tr>
+            <th rowspan="2" class="col-deadline">Ngày hết hạn</th>
+            <th rowspan="2" class="col-product">Sản phẩm công việc</th>
+            <th rowspan="2" class="col-coeff">Hệ số quy đổi</th>
+            <th rowspan="2" class="col-assigned">Số lượng giao</th>
+            <th rowspan="2" class="col-assigned-conv">Số lượng giao quy đổi</th>
+            <th colspan="2" class="col-qty-header">Đánh giá số lượng</th>
+            <th colspan="3" class="col-progress-header">Đánh giá tiến độ</th>
+            <th colspan="2" class="col-quality-header">Đánh giá chất lượng</th>
+          </tr>
+          <tr>
+            <th class="col-actual">SL hoàn thành thực tế</th>
+            <th class="col-actual-conv">SL HT thực tế quy đổi</th>
+            <th class="col-completion">Ngày hoàn thành</th>
+            <th class="col-delay">Số ngày chậm</th>
+            <th class="col-progress-conv">SL đạt tiến độ QĐ</th>
+            <th class="col-rework">Số lần làm lại</th>
+            <th class="col-quality-conv">SL đạt chất lượng QĐ</th>
+          </tr>
+          <tr class="col-numbers-row">
+            <td>(1)</td>
+            <td>(2)</td>
+            <td>(3)</td>
+            <td>(4)</td>
+            <td>(5)</td>
+            <td>(6)</td>
+            <td>(7)=(5)×(6)</td>
+            <td>(8)</td>
+            <td>(9)=(5)×(8)</td>
+            <td>(10)</td>
+            <td>(11)=(10)-(3)</td>
+            <td>(12)</td>
+            <td>(13)</td>
+            <td>(14)</td>
+            <td style="position:sticky; right:0; background:#f8fafc; z-index:20;">-</td>
+          </tr>
+        </thead>
+        <tbody id="dailyTableBody">
+          <tr *ngFor="let t of pagedTasks; let i = index">
+            <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+            <td class="col-content">
+              <div style="font-weight:700; color:var(--color-primary);">{{ t.task_name }}</div>
+              <div style="font-size:11px; margin-top:4px;" *ngIf="t.reference_code">MS: {{ t.reference_code }}</div>
+              <div style="font-size:11px; color:#c2410c; font-weight:600; margin-top:4px;" *ngIf="t.lead_by_name">
+                <i class="pi pi-user-edit" style="font-size:10px;"></i> {{ t.lead_by_name }}
+              </div>
+            </td>
+            <td>{{ t.deadline | date:'dd/MM/yyyy' }}</td>
+            <td class="col-product">{{ t.product }}</td>
+            <td>{{ t.coefficient }}</td>
+            <td>{{ t.assigned_qty }}</td>
+            <td style="background:#eff6ff; font-weight:600;">{{ t.assigned_qty_conv | number:'1.2-2' }}</td>
+            <td>{{ t.actual_qty }}</td>
+            <td style="background:#f0fdfa; font-weight:600;">{{ t.actual_qty_conv | number:'1.2-2' }}</td>
+            <td>{{ t.completion_date | date:'dd/MM/yyyy' }}</td>
+            <td [style.color]="t.delay_days > 0 ? 'var(--color-danger)' : 'inherit'">{{ t.delay_days > 0 ? t.delay_days : '-' }}</td>
+            <td style="background:#ecfdf5; font-weight:700; color:#065f46;">{{ t.progress_conv | number:'1.2-2' }}</td>
+            <td>{{ t.rework_count > 0 ? t.rework_count : '-' }}</td>
+            <td style="background:#ecfdf5; font-weight:700; color:#065f46;">{{ t.quality_conv | number:'1.2-2' }}</td>
+            <td style="position:sticky; right:0; background:#fff; z-index:10; border-left:1px solid var(--color-border); box-shadow: -2px 0 5px rgba(0,0,0,0.03);">
+              <div style="display:flex;gap:6px;justify-content:center;">
+                <button class="btn btn-sm btn-outline" style="padding:4px; height:28px;" (click)="editTask(t)"><i class="pi pi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline" style="padding:4px; height:28px; color:var(--color-danger);" (click)="deleteTask(t.id)"><i class="pi pi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-      <!-- Custom Pagination -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
-        <div style="font-size:13px; color:var(--color-muted);">
-          Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, tasks.length) }} trong tổng số {{ tasks.length }} công việc
-        </div>
-        <div style="display:flex; gap:16px; align-items:center;">
-           <div style="display:flex; align-items:center; gap:8px;">
-             <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
-             <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
-                <option [value]="10">10</option>
-                <option [value]="20">20</option>
-                <option [value]="50">50</option>
-             </select>
-           </div>
-           <div style="display:flex; gap:4px;">
-              <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
-              <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
-              <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
-           </div>
-        </div>
+    <!-- Custom Pagination -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 8px;">
+      <div style="font-size:13px; color:var(--color-muted);">
+        Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, tasks.length) }} trong tổng số {{ tasks.length }} công việc
+      </div>
+      <div style="display:flex; gap:16px; align-items:center;">
+         <div style="display:flex; align-items:center; gap:8px;">
+           <span style="font-size:13px; color:var(--color-muted);">Hiển thị:</span>
+           <select class="form-input" style="width:70px; height:32px; padding:2px 8px;" [(ngModel)]="pageSize" (change)="currentPage = 1">
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+           </select>
+         </div>
+         <div style="display:flex; gap:4px;">
+            <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1"><i class="pi pi-chevron-left"></i></button>
+            <button class="btn btn-sm" [class.btn-primary]="currentPage === p" *ngFor="let p of pageNumbers" (click)="currentPage = p">{{ p }}</button>
+            <button class="btn btn-sm btn-outline" [disabled]="currentPage >= pageNumbers.length" (click)="currentPage = currentPage + 1"><i class="pi pi-chevron-right"></i></button>
+         </div>
       </div>
     </div>
   </div>
-  </ng-container>
 </div>
 
 <!-- Task Dialog -->
@@ -116,55 +178,94 @@
           [draggable]="false" [resizable]="false">
   
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
-    <div class="form-group">
-      <label class="form-label">Tên công việc / Nội dung thực hiện <span class="text-danger">*</span></label>
-      <input type="text" formControlName="task_name" class="form-input" placeholder="Ví dụ: Xây dựng dự thảo Quyết định...">
-    </div>
+    <div class="form-body" style="overflow-y: auto; padding-right: 8px;">
+      <div class="form-group">
+        <label class="form-label">Tên công việc / Nội dung thực hiện <span class="text-danger">*</span></label>
+        <input type="text" formControlName="task_name" class="form-input" placeholder="Ví dụ: Xây dựng dự thảo Quyết định...">
+      </div>
 
-    <div class="form-group">
-      <label class="form-label">Loại công việc <span class="text-danger">*</span></label>
-      <select formControlName="work_type_id" class="form-input">
-        <option value="">-- Chọn loại công việc --</option>
-        <optgroup *ngFor="let g of workGroups" [label]="g.name">
-          <option *ngFor="let t of getTypesForGroup(g.id)" [value]="t.id">{{ t.name }} (HS: {{ t.coefficient }})</option>
-        </optgroup>
-      </select>
-    </div>
+      <div class="form-group">
+        <label class="form-label">Loại công việc <span class="text-danger">*</span></label>
+        <p-dropdown [options]="groupedWorkTypes" 
+                    formControlName="work_type_id" 
+                    [group]="true"
+                    [filter]="true"
+                    placeholder="-- Chọn loại công việc --"
+                    [style]="{'width':'100%'}"
+                    scrollHeight="250px">
+          <ng-template let-group pTemplate="group">
+            <div class="flex align-items-center">
+              <span style="font-weight: 700; color: var(--color-primary);">{{ group.label }}</span>
+            </div>
+          </ng-template>
+          <ng-template let-item pTemplate="item">
+            <div style="white-space: normal; line-height: 1.4; padding: 4px 0;">
+              {{ item.label }}
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div class="form-group">
-        <label class="form-label">SL Giao / Định mức <span class="text-danger">*</span></label>
-        <input type="number" formControlName="assigned_qty" class="form-input">
+        <label class="form-label">Sản phẩm công việc</label>
+        <input type="text" formControlName="product" class="form-input" placeholder="Tên sản phẩm dự kiến...">
       </div>
-      <div class="form-group">
-        <label class="form-label">SL Đã thực hiện <span class="text-danger">*</span></label>
-        <input type="number" formControlName="actual_qty" class="form-input">
-      </div>
-    </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="form-group">
-        <label class="form-label">Hạn hoàn thành (Deadline)</label>
-        <input type="date" formControlName="deadline" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Ngày thực tế hoàn thành</label>
-        <input type="date" formControlName="completion_date" class="form-input">
-      </div>
-    </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">SL Giao / Định mức <span class="text-danger">*</span></label>
+          <input type="number" formControlName="assigned_qty" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SL Đã thực hiện <span class="text-danger">*</span></label>
+          <input type="number" formControlName="actual_qty" class="form-input">
+        </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="form-group">
-        <label class="form-label">Trạng thái công việc</label>
-        <select formControlName="status" class="form-input">
-          <option value="pending">Đang thực hiện</option>
-          <option value="completed">Đã hoàn thành</option>
-          <option value="cancelled">Hủy bỏ / Tạm dừng</option>
-        </select>
+        <div class="form-group">
+          <label class="form-label">Hạn hoàn thành (Deadline)</label>
+          <input type="date" formControlName="deadline" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ngày thực tế hoàn thành</label>
+          <input type="date" formControlName="completion_date" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Trạng thái công việc</label>
+          <select formControlName="status" class="form-input">
+            <option value="pending">Đang thực hiện</option>
+            <option value="completed">Đã hoàn thành</option>
+            <option value="cancelled">Hủy bỏ / Tạm dừng</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số lần làm lại (Bị yêu cầu sửa)</label>
+          <input type="number" formControlName="rework_count" class="form-input" min="0">
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">Lãnh đạo chỉ đạo</label>
+          <p-dropdown [options]="leaders" 
+                      formControlName="lead_by" 
+                      optionLabel="full_name" 
+                      optionValue="id"
+                      [filter]="true"
+                      placeholder="-- Chọn lãnh đạo (nếu có) --"
+                      [showClear]="true"
+                      [style]="{'width':'100%'}">
+            <ng-template let-l pTemplate="item">
+              <div>
+                <div style="font-weight:600;">{{ l.full_name }}</div>
+                <div style="font-size:11px; color:var(--color-muted);">{{ l.position }}</div>
+              </div>
+            </ng-template>
+          </p-dropdown>
+        </div>
       </div>
+
       <div class="form-group">
-        <label class="form-label">Mã số tham chiếu (Số văn bản...)</label>
-        <input type="text" formControlName="reference_code" class="form-input">
+        <label class="form-label">Ghi chú thêm</label>
+        <textarea formControlName="note" class="form-input" style="height:80px;"></textarea>
       </div>
     </div>
 
@@ -173,12 +274,12 @@
       <textarea formControlName="note" class="form-input" style="height:80px;"></textarea>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px;">
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;border-top:1px solid var(--color-border);padding-top:20px; padding-bottom: 20px; background: #fff; position: sticky; bottom: -1.5rem; z-index: 10;">
       <button type="button" class="btn btn-outline" (click)="showForm = false">Bỏ qua</button>
       <button type="submit" class="btn btn-primary" [disabled]="loading">
         <i class="pi pi-save" *ngIf="!loading"></i>
         <i class="pi pi-spin pi-spinner" *ngIf="loading"></i>
-        Lưu công việc
+        {{ editingTask ? 'Cập nhật công việc' : 'Thêm công việc mới' }}
       </button>
     </div>
   </form>

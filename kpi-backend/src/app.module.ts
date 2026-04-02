@@ -7,7 +7,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkGroupsModule } from './modules/work-groups/work-groups.module';
 import { WorkTypesModule } from './modules/work-types/work-types.module';
-import { KpiPeriodsModule } from './modules/kpi-periods/kpi-periods.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
@@ -22,7 +21,6 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     UsersModule,
     WorkGroupsModule,
     WorkTypesModule,
-    KpiPeriodsModule,
     TasksModule,
     DashboardModule,
   ],

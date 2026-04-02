@@ -49,11 +49,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/work-types/work-types.component').then(m => m.WorkTypesComponent),
         canActivate: [roleGuard('admin')]
       },
-      {
-        path: 'admin/kpi-periods',
-        loadComponent: () => import('./features/admin/kpi-periods/kpi-periods.component').then(m => m.KpiPeriodsComponent),
-        canActivate: [roleGuard('admin')]
-      },
     ]
   },
   { path: '**', redirectTo: '/dashboard' }

@@ -31,7 +31,6 @@ export class ShellComponent {
     { label: 'Quản lý tài khoản', icon: 'pi-users', route: '/admin/users' },
     { label: 'Nhóm công việc', icon: 'pi-folder', route: '/admin/work-groups' },
     { label: 'Loại công việc', icon: 'pi-sitemap', route: '/admin/work-types' },
-    { label: 'Kỳ KPI', icon: 'pi-calendar', route: '/admin/kpi-periods' },
   ];
 
   canSeeNav(item: NavItem): boolean {

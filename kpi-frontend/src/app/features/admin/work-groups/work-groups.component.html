@@ -1,16 +1,20 @@
 <div class="topbar">
   <div class="topbar-title">Quản lý Nhóm công việc</div>
   <div class="topbar-actions">
-    <button class="btn btn-primary btn-sm" (click)="addNew()">
-      <i class="pi pi-plus"></i> Thêm mới
-    </button>
   </div>
 </div>
 
 <div class="page-content">
   <div class="card">
-    <div class="card-header">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
       <div class="card-title">Danh sách các nhóm công việc</div>
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" class="search-input-field" placeholder="Tìm tên nhóm, mã nhóm..." [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="addNew()">
+        <i class="pi pi-plus"></i> Thêm mới
+      </button>
     </div>
 
     <div class="table-responsive" style="overflow-x:auto;">
@@ -25,7 +29,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let g of workGroups">
+          <tr *ngFor="let g of filteredWorkGroups">
             <td>
               <span style="font-weight:700;color:var(--color-muted);">{{ g.sort_order }}</span>
             </td>

@@ -1,22 +1,27 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-admin-work-groups',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DialogModule],
   templateUrl: './work-groups.component.html'
 })
-export class WorkGroupsComponent implements OnInit {
+export class WorkGroupsComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
   private messageService = inject(MessageService);
 
   workGroups: any[] = [];
+  searchText = '';
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
+
   showForm = false;
   editingItem: any = null;
   loading = false;
@@ -29,10 +34,33 @@ export class WorkGroupsComponent implements OnInit {
     sort_order: [0],
   });
 
-  ngOnInit() { this.load(); }
-  
-  load() { 
-    this.api.get<any>('work-groups').subscribe(res => { 
+  get filteredWorkGroups() {
+    return this.workGroups;
+  }
+
+  ngOnInit() {
+    this.load();
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(val => {
+      this.searchText = val;
+      this.load();
+    });
+  }
+
+  ngOnDestroy() {
+    this.searchSubscription?.unsubscribe();
+  }
+
+  onSearchChange(val: string) {
+    this.searchSubject.next(val);
+  }
+
+  load() {
+    const params: any = {};
+    if (this.searchText) params['search'] = this.searchText;
+    this.api.get<any>('work-groups', params).subscribe(res => { 
       this.workGroups = (res.data || []).sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)); 
     }); 
   }
