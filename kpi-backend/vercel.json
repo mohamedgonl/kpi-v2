@@ -9,8 +9,7 @@
       "source": "/(.*)",
       "destination": "src/main.ts"
     }
-  ],
-  "outputDirectory": "dist"
+  ]
 }
 
 
