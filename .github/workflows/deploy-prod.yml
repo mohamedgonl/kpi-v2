@@ -63,8 +63,10 @@ jobs:
           echo "export const environment = { production: true, apiUrl: '${{ vars.BACKEND_API_URL }}/api', appName: 'Hệ thống Quản lý KPI' };" > src/environments/environment.prod.ts
 
       - name: Deploy to Vercel
-        working-directory: ./
-        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
+          vercel-args: '--prod'
+          working-directory: ./kpi-frontend
