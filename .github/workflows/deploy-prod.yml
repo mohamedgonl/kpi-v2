@@ -64,7 +64,7 @@ jobs:
 
       - name: Deploy to Vercel
         working-directory: ./
-        run: npx vercel ./kpi-frontend --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_FRONTEND }}
