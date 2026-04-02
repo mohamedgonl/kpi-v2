@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 import { DatabaseService } from '../../database/database.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -11,15 +11,22 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
-  private resend: Resend;
+  private transporter: nodemailer.Transporter;
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly databaseService: DatabaseService,
     private readonly configService: ConfigService,
   ) {
-    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
-    this.resend = new Resend(resendApiKey);
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get('SMTP_HOST'),
+      port: Number(this.configService.get('SMTP_PORT')),
+      secure: Number(this.configService.get('SMTP_PORT')) === 465,
+      auth: {
+        user: this.configService.get('SMTP_USER'),
+        pass: this.configService.get('SMTP_PASS'),
+      },
+    });
   }
 
   async login(loginDto: LoginDto) {
@@ -88,18 +95,17 @@ export class AuthService {
       [user.id, token, expiresAt]
     );
 
-    // Send email using Resend
+    // Send email using SMTP
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:4200';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
     
-    // Lấy thông tin email người gửi từ biến môi trường, mặc định dùng email test
-    const fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 'KPI System <onboarding@resend.dev>';
+    // Lấy thông tin email người gửi từ biến môi trường
+    const fromEmail = this.configService.get<string>('SMTP_FROM') || 'the.shy.garena2@gmail.com';
 
     try {
-      await this.resend.emails.send({
+      await this.transporter.sendMail({
         from: fromEmail,
-        to: email, // Resend free tier might restrict to verified domains only
-        subject: 'Yêu cầu khôi phục mật khẩu Hệ thống KPI',
+        to: email,        subject: 'Yêu cầu khôi phục mật khẩu Hệ thống KPI',
         html: `
           <h3>Xin chào ${user.full_name},</h3>
           <p>Bạn đã yêu cầu khôi phục mật khẩu cho tài khoản hệ thống KPI.</p>
