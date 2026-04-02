@@ -12,9 +12,15 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   app.enableCors({
-    origin: '*',
+    origin: [
+      'https://kpi-vu-to-chuc-can-bo-test.vercel.app',
+      'https://kpi-vu-to-chuc-can-bo.vercel.app',
+      'http://localhost:4200',
+      'http://localhost:3000',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   app.useGlobalPipes(

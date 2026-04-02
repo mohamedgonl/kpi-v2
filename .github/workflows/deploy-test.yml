@@ -24,8 +24,7 @@ jobs:
 
       - name: Deploy to Vercel
         working-directory: ./
-        run: |
-          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        run: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --env SMTP_HOST="${{ vars.SMTP_HOST }}" --env SMTP_PORT="${{ vars.SMTP_PORT }}" --env SMTP_USER="${{ secrets.SMTP_USER }}" --env SMTP_PASS="${{ secrets.SMTP_PASS }}" --env SMTP_FROM="${{ vars.SMTP_FROM }}" --env DATABASE_URL="${{ secrets.DATABASE_URL }}" --env JWT_SECRET="${{ secrets.JWT_SECRET }}" --env JWT_EXPIRES_IN="${{ vars.JWT_EXPIRES_IN }}" --env FRONTEND_URL="${{ vars.FRONTEND_URL }}" --env NODE_ENV="${{ vars.NODE_ENV }}"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
@@ -57,7 +56,12 @@ jobs:
         env:
           BACKEND_API_URL: ${{ vars.BACKEND_API_URL }} # Tự động tiêm URL backend test vào build
 
+      - name: Inject Backend API URL for Vercel remote build
+        run: |
+          echo "export const environment = { production: true, apiUrl: '${{ vars.BACKEND_API_URL }}/api', appName: 'Hệ thống Quản lý KPI' };" > src/environments/environment.prod.ts
+
       - name: Deploy to Vercel
+
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

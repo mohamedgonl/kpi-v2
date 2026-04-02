@@ -37,8 +37,8 @@
               </div>
             </td>
             <td>
-              <span class="chip chip-info" [style.background]="g.color_hex + '20'" [style.color]="g.color_hex">
-                {{ g.description || '—' }}
+              <span *ngIf="g.description" class="chip chip-info" [style.background]="g.color_hex + '20'" [style.color]="g.color_hex">
+                {{ g.description }}
               </span>
             </td>
             <td>
