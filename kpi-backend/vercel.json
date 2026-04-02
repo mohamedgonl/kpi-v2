@@ -9,6 +9,12 @@
       "source": "/(.*)",
       "destination": "src/main.ts"
     }
+  ],
+  "builds": [
+    {
+      "src": "src/main.ts",
+      "use": "@vercel/node"
+    }
   ]
 }
 
