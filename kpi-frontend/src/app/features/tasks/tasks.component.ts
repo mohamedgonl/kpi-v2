@@ -164,7 +164,13 @@ export class TasksComponent implements OnInit {
       this.startDate = `${this.selectedYear}-01-01`;
       this.endDate = `${this.selectedYear}-12-31`;
     } else if (this.timeMode === 'range') {
-      // Inputs binded to startDate/endDate manually
+      // p-calendar values are already Date objects
+      if (this.startDate && this.endDate) {
+        const s = new Date(this.startDate);
+        const e = new Date(this.endDate);
+        this.startDate = `${s.getFullYear()}-${(s.getMonth() + 1).toString().padStart(2, '0')}-${s.getDate().toString().padStart(2, '0')}`;
+        this.endDate = `${e.getFullYear()}-${(e.getMonth() + 1).toString().padStart(2, '0')}-${e.getDate().toString().padStart(2, '0')}`;
+      }
     }
     this.load();
   }
@@ -234,9 +240,19 @@ export class TasksComponent implements OnInit {
       return;
     }
     this.loading = true;
-    const val = { ...this.form.value };
-    if (val.deadline) val.deadline = (val.deadline as any).toISOString().split('T')[0];
-    if (val.completion_date) val.completion_date = (val.completion_date as any).toISOString().split('T')[0];
+    const val: any = { ...this.form.value };
+    if (val.deadline) {
+      const d = new Date(val.deadline);
+      if (!isNaN(d.getTime())) {
+        val.deadline = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+      }
+    }
+    if (val.completion_date) {
+      const d = new Date(val.completion_date);
+      if (!isNaN(d.getTime())) {
+        val.completion_date = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+      }
+    }
 
     const req = this.editingTask 
       ? this.api.patch<any>(`tasks/${this.editingTask.id}`, val)

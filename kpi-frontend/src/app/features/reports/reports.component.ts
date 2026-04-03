@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ChartModule } from 'primeng/chart';
+import { CalendarModule } from 'primeng/calendar';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -10,7 +11,7 @@ import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs'
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, ChartModule, FormsModule],
+  imports: [CommonModule, ChartModule, FormsModule, CalendarModule],
   templateUrl: './reports.component.html'
 })
 export class ReportsComponent implements OnInit {
@@ -128,8 +129,8 @@ export class ReportsComponent implements OnInit {
         return;
     }
 
-    this.startDate = start.toISOString().substring(0, 10);
-    this.endDate = end.toISOString().substring(0, 10);
+    this.startDate = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getDate().toString().padStart(2, '0')}`;
+    this.endDate = `${end.getFullYear()}-${(end.getMonth() + 1).toString().padStart(2, '0')}-${end.getDate().toString().padStart(2, '0')}`;
     this.loadTableData();
     this.loadChartData();
   }
@@ -241,11 +242,11 @@ export class ReportsComponent implements OnInit {
       'STT': index + 1,
       'Họ tên': row.user_name || row.full_name,
       'Chức vụ': row.position,
-      'SL giao (quy đổi)': row.total_col7,
-      'SL thực (quy đổi)': row.total_col9,
-      'a% (Số lượng)': row.a + '%',
-      'b% (Chất lượng)': row.b + '%',
-      'c% (Tiến độ)': row.c + '%',
+      'SL giao (quy đổi)': row.total_assigned_qty,
+      'SL thực (quy đổi)': row.total_actual_qty,
+      'Số lượng (%)': row.a + '%',
+      'Chất lượng (%)': row.b + '%',
+      'Tiến độ (%)': row.c + '%',
       'KPI': row.kpi + '%',
       'Xếp loại': this.grade(row.kpi)
     }));
@@ -254,11 +255,11 @@ export class ReportsComponent implements OnInit {
       'STT': '',
       'Họ tên': 'TỔNG CỘNG ĐƠN VỊ',
       'Chức vụ': '',
-      'SL giao (quy đổi)': this.totalUnitCol7,
-      'SL thực (quy đổi)': this.totalUnitCol9,
-      'a% (Số lượng)': this.unitA.toFixed(1) + '%',
-      'b% (Chất lượng)': this.unitB.toFixed(1) + '%',
-      'c% (Tiến độ)': this.unitC.toFixed(1) + '%',
+      'SL giao (quy đổi)': this.totalUnitAssigned,
+      'SL thực (quy đổi)': this.totalUnitActual,
+      'Số lượng (%)': this.unitA.toFixed(1) + '%',
+      'Chất lượng (%)': this.unitB.toFixed(1) + '%',
+      'Tiến độ (%)': this.unitC.toFixed(1) + '%',
       'KPI': this.unitKPI.toFixed(1) + '%',
       'Xếp loại': this.grade(this.unitKPI)
     });
@@ -312,14 +313,14 @@ export class ReportsComponent implements OnInit {
     }
   }
 
-  get totalUnitCol7() { return this.allReportData.reduce((s, r) => s + Number(r.total_col7 || 0), 0); }
-  get totalUnitCol9() { return this.allReportData.reduce((s, r) => s + Number(r.total_col9 || 0), 0); }
-  get totalUnitCol12() { return this.allReportData.reduce((s, r) => s + Number(r.total_col12 || 0), 0); }
-  get totalUnitCol14() { return this.allReportData.reduce((s, r) => s + Number(r.total_col14 || 0), 0); }
+  get totalUnitAssigned() { return this.allReportData.reduce((s, r) => s + Number(r.total_assigned_qty || 0), 0); }
+  get totalUnitActual() { return this.allReportData.reduce((s, r) => s + Number(r.total_actual_qty || 0), 0); }
+  get totalUnitOntime() { return this.allReportData.reduce((s, r) => s + Number(r.total_ontime_qty || 0), 0); }
+  get totalUnitQuality() { return this.allReportData.reduce((s, r) => s + Number(r.total_quality_qty || 0), 0); }
 
-  get unitA() { const c7 = this.totalUnitCol7; return c7 > 0 ? (this.totalUnitCol9 / c7) * 100 : 0; }
-  get unitB() { const c7 = this.totalUnitCol7; return c7 > 0 ? (this.totalUnitCol14 / c7) * 100 : 0; }
-  get unitC() { const c7 = this.totalUnitCol7; return c7 > 0 ? (this.totalUnitCol12 / c7) * 100 : 0; }
+  get unitA() { const c = this.totalUnitAssigned; return c > 0 ? (this.totalUnitActual / c) * 100 : 0; }
+  get unitB() { const c = this.totalUnitAssigned; return c > 0 ? (this.totalUnitQuality / c) * 100 : 0; }
+  get unitC() { const c = this.totalUnitAssigned; return c > 0 ? (this.totalUnitOntime / c) * 100 : 0; }
   get unitKPI() { return (this.unitA + this.unitB + this.unitC) / 3; }
 
   grade(kpi: number): string {

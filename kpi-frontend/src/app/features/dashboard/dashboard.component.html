@@ -29,9 +29,9 @@
       </ng-container>
 
       <ng-container *ngIf="timeMode === 'range'">
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="startDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="startDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Từ ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
         <span style="font-size:12px; font-weight:600;">-</span>
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="endDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="endDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Đến ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
       </ng-container>
     </div>
   </div>
@@ -57,22 +57,31 @@
     <div class="stat-cards">
       <div class="stat-card" [style.--card-accent]="getKpiColor(myKpi.kpi)">
         <div class="stat-label">Tổng điểm KPI</div>
-        <div class="stat-value">{{ myKpi.kpi }}%</div>
-        <div class="stat-change" [class]="myKpi.kpi >= 70 ? 'up' : 'down'">
-          Xếp loại: {{ grade(myKpi.kpi) }}
+        <div class="stat-value">{{ myKpi.kpi | number:'1.1-1' }}%</div>
+        <div class="stat-detail">
+          Xếp loại: <strong>{{ grade(myKpi.kpi) }}</strong>
         </div>
       </div>
       <div class="stat-card" style="--card-accent: var(--color-success)">
-        <div class="stat-label">a% (Số lượng)</div>
-        <div class="stat-value">{{ myKpi.a }}%</div>
+        <div class="stat-label">Số lượng (%)</div>
+        <div class="stat-value">{{ myKpi.a | number:'1.1-1' }}%</div>
+        <div class="stat-detail" *ngIf="myKpi.total_assigned_qty !== undefined">
+           KL thực hiện: <strong>{{ myKpi.total_actual_qty | number:'1.0-1' }} / {{ myKpi.total_assigned_qty | number:'1.0-1' }}</strong>
+        </div>
       </div>
       <div class="stat-card" style="--card-accent: var(--color-info)">
-        <div class="stat-label">b% (Chất lượng)</div>
-        <div class="stat-value">{{ myKpi.b }}%</div>
+        <div class="stat-label">Chất lượng (%)</div>
+        <div class="stat-value">{{ myKpi.b | number:'1.1-1' }}%</div>
+        <div class="stat-detail" *ngIf="myKpi.total_rework !== undefined">
+           Số lần sửa: <strong>{{ myKpi.total_rework }}</strong>
+        </div>
       </div>
       <div class="stat-card" style="--card-accent: var(--color-warning)">
-        <div class="stat-label">c% (Tiến độ)</div>
-        <div class="stat-value">{{ myKpi.c }}%</div>
+        <div class="stat-label">Tiến độ (%)</div>
+        <div class="stat-value">{{ myKpi.c | number:'1.1-1' }}%</div>
+        <div class="stat-detail">
+           Công việc: <strong>{{ myKpi.completed_tasks }} / {{ myKpi.total_tasks }}</strong>
+        </div>
       </div>
     </div>
   </div>
@@ -102,7 +111,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th rowspan="2" style="width:12rem; text-align:center; white-space:nowrap;">Hạng</th>
+              <th rowspan="2" style="width:6rem; text-align:center; white-space:nowrap;">Hạng</th>
               <th style="cursor:pointer; white-space:nowrap;" (click)="onSort('full_name')">
                 <div style="display:flex; align-items:center; gap:8px;">
                   Họ và tên <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'full_name', 'pi-sort-amount-down': sortBy === 'full_name' && !sortDesc, 'pi-sort-amount-up': sortBy === 'full_name' && sortDesc}"></i>
@@ -120,17 +129,17 @@
               </th>
               <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('a')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  a (Số lượng %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
+                  Số lượng (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
                 </div>
               </th>
               <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('b')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  b (Chất lượng %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
+                  Chất lượng (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
                 </div>
               </th>
               <th rowspan="2" style="text-align:center; width:12rem; cursor:pointer; white-space:nowrap;" (click)="onSort('c')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  c (Tiến độ %) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
+                  Tiến độ (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
                 </div>
               </th>
               <th rowspan="2" style="text-align:center; width:12rem; background:#f1f5f9; cursor:pointer; white-space:nowrap;" (click)="onSort('kpi')">

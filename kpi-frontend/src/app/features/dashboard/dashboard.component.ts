@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CalendarModule } from 'primeng/calendar';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -14,14 +15,17 @@ interface KpiData {
   b: number; 
   c: number; 
   kpi: number;
-  total_tasks: number; 
-  completed_tasks: number;
+  total_tasks: number | string; 
+  completed_tasks: number | string;
+  total_assigned_qty?: number; 
+  total_actual_qty?: number; 
+  total_rework?: number;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CalendarModule],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -29,8 +33,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
 
   periods: any[] = [];
-  startDate: string = '';
-  endDate: string = '';
+  startDate: any = '';
+  endDate: any = '';
   
   timeMode: 'date' | 'month' | 'quarter' | 'year' | 'range' = 'month';
   selectedMonth: number = new Date().getMonth() + 1;
@@ -126,8 +130,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   updateDates() {
     const now = new Date();
-    let start = new Date();
-    let end = new Date();
+    let start: any = new Date();
+    let end: any = new Date();
 
     switch (this.timeMode) {
       case 'date':
@@ -148,11 +152,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         end = new Date(this.selectedYear, 12, 0, 23, 59, 59);
         break;
       case 'range':
+        if (this.startDate && this.endDate) {
+          start = new Date(this.startDate);
+          end = new Date(this.endDate);
+          this.startDate = start.toISOString().substring(0, 10);
+          this.endDate = end.toISOString().substring(0, 10);
+        }
         return this.loadData();
     }
 
-    this.startDate = start.toISOString().substring(0, 10);
-    this.endDate = end.toISOString().substring(0, 10);
+    this.startDate = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getDate().toString().padStart(2, '0')}`;
+    this.endDate = `${end.getFullYear()}-${(end.getMonth() + 1).toString().padStart(2, '0')}-${end.getDate().toString().padStart(2, '0')}`;
     this.loadData();
   }
 

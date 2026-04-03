@@ -30,9 +30,9 @@
       </ng-container>
 
       <ng-container *ngIf="timeMode === 'range'">
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="startDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="startDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Từ ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
         <span style="font-size:12px; font-weight:600;">-</span>
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="endDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="endDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Đến ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
       </ng-container>
     </div>
   </div>
@@ -192,8 +192,7 @@
           [(visible)]="showForm" 
           [modal]="true" 
           [style]="{width: '750px'}" 
-          [draggable]="false" [resizable]="false"
-          appendTo="body">
+          [draggable]="false" [resizable]="false">
   
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
     <div class="form-body" style="overflow-y: auto; padding-right: 8px;">
@@ -210,8 +209,8 @@
                     [filter]="true"
                     placeholder="-- Chọn loại công việc --"
                     [style]="{'width':'100%'}"
-                    scrollHeight="250px"
-                    appendTo="body">
+                    [panelStyle]="{'width':'100%', 'max-width': '710px'}"
+                    scrollHeight="250px">
           <ng-template let-group pTemplate="group">
             <div style="padding: 4px 0;" *ngIf="group.label">
               <span style="font-weight: 800; color: var(--color-primary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em;">{{ group.label }}</span>
@@ -241,12 +240,12 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Hạn hoàn thành (Deadline)</label>
-          <input type="date" formControlName="deadline" class="form-input">
+          <label class="form-label">Hạn hoàn thành (Deadline) <span class="text-danger">*</span></label>
+          <p-calendar formControlName="deadline" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="dd/mm/yyyy"></p-calendar>
         </div>
         <div class="form-group">
           <label class="form-label">Ngày thực tế hoàn thành</label>
-          <input type="date" formControlName="completion_date" class="form-input">
+          <p-calendar formControlName="completion_date" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="dd/mm/yyyy"></p-calendar>
         </div>
 
         <div class="form-group">
@@ -272,8 +271,7 @@
                       placeholder="-- Chọn lãnh đạo (nếu có) --"
                       [showClear]="true"
                       [style]="{'width':'100%'}"
-                      scrollHeight="250px"
-                      appendTo="body">
+                      scrollHeight="250px">
             <ng-template let-l pTemplate="item">
               <div style="padding: 4px 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" [title]="l.full_name + ' - ' + (l.position || '')">
                 <div style="font-weight: 600; color: var(--color-primary);">{{ l.full_name }}</div>

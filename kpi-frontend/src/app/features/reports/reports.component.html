@@ -30,9 +30,9 @@
       </ng-container>
 
       <ng-container *ngIf="timeMode === 'range'">
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="startDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="startDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Từ ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
         <span style="font-size:12px; font-weight:600;">-</span>
-        <input type="date" class="form-input" style="width:140px;height:36px;" [(ngModel)]="endDate" (change)="updateDates()">
+        <p-calendar [(ngModel)]="endDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Đến ngày" [style]="{'width':'150px'}" (onSelect)="updateDates()"></p-calendar>
       </ng-container>
     </div>
   </div>
@@ -104,29 +104,29 @@
                   Chức vụ <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'position', 'pi-sort-amount-down': sortBy === 'position' && !sortDesc, 'pi-sort-amount-up': sortBy === 'position' && sortDesc}"></i>
                 </div>
               </th>
-              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_col7')">
+              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_assigned_qty')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  Số lượng Giao (7) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_col7', 'pi-sort-amount-down': sortBy === 'total_col7' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_col7' && sortDesc}"></i>
+                  Số lượng Giao  <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_assigned_qty', 'pi-sort-amount-down': sortBy === 'total_assigned_qty' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_assigned_qty' && sortDesc}"></i>
                 </div>
               </th>
-              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_col9')">
+              <th style="text-align:center; width:120px; cursor:pointer; white-space:nowrap;" (click)="onSort('total_actual_qty')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  Số lượng Thực (9) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_col9', 'pi-sort-amount-down': sortBy === 'total_col9' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_col9' && sortDesc}"></i>
+                  Số lượng Thực <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'total_actual_qty', 'pi-sort-amount-down': sortBy === 'total_actual_qty' && !sortDesc, 'pi-sort-amount-up': sortBy === 'total_actual_qty' && sortDesc}"></i>
                 </div>
               </th>
               <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('a')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  a% (Số lượng) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
+                  Số lượng (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'a', 'pi-sort-amount-down': sortBy === 'a' && !sortDesc, 'pi-sort-amount-up': sortBy === 'a' && sortDesc}"></i>
                 </div>
               </th>
               <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('b')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  b% (Chất lượng) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
+                  Chất lượng (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'b', 'pi-sort-amount-down': sortBy === 'b' && !sortDesc, 'pi-sort-amount-up': sortBy === 'b' && sortDesc}"></i>
                 </div>
               </th>
               <th style="text-align:center; width:110px; cursor:pointer; white-space:nowrap;" (click)="onSort('c')">
                 <div style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                  c% (Tiến độ) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
+                  Tiến độ (%) <i class="pi" [ngClass]="{'pi-sort-alt': sortBy !== 'c', 'pi-sort-amount-down': sortBy === 'c' && !sortDesc, 'pi-sort-amount-up': sortBy === 'c' && sortDesc}"></i>
                 </div>
               </th>
               <th style="text-align:center; width:100px; background:#f1f5f9; cursor:pointer; white-space:nowrap;" (click)="onSort('kpi')">
@@ -144,8 +144,8 @@
                 <strong>{{ row.user_name || row.full_name }}</strong>
               </td>
               <td style="color:var(--color-muted);">{{ row.position || '—' }}</td>
-              <td style="text-align:center">{{ row.total_col7 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ row.total_col9 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ row.total_assigned_qty | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ row.total_actual_qty | number:'1.1-1' }}</td>
               <td style="text-align:center">{{ row.a | number:'1.1-1' }}%</td>
               <td style="text-align:center">{{ row.b | number:'1.1-1' }}%</td>
               <td style="text-align:center">{{ row.c | number:'1.1-1' }}%</td>
@@ -157,8 +157,8 @@
             <!-- Footer Row for Totals -->
             <tr style="background:#f8fafc; font-weight:700; color:var(--color-primary)" *ngIf="allReportData.length > 0">
               <td colspan="3" style="text-align:right; position:sticky; left:0; background:#f8fafc; z-index:9; border-right:1px solid var(--color-border);">TỔNG CỘNG ĐƠN VỊ:</td>
-              <td style="text-align:center">{{ totalUnitCol7 | number:'1.1-1' }}</td>
-              <td style="text-align:center">{{ totalUnitCol9 | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ totalUnitAssigned | number:'1.1-1' }}</td>
+              <td style="text-align:center">{{ totalUnitActual | number:'1.1-1' }}</td>
               <td style="text-align:center">{{ unitA | number:'1.1-1' }}%</td>
               <td style="text-align:center">{{ unitB | number:'1.1-1' }}%</td>
               <td style="text-align:center">{{ unitC | number:'1.1-1' }}%</td>

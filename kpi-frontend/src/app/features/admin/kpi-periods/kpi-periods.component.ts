@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { DialogModule } from 'primeng/dialog';
+import { CalendarModule } from 'primeng/calendar';
 import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-admin-kpi-periods',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule],
+  imports: [CommonModule, ReactiveFormsModule, DialogModule, CalendarModule],
   templateUrl: './kpi-periods.component.html'
 })
 export class KpiPeriodsComponent implements OnInit {
